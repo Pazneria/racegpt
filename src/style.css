@@ -214,10 +214,6 @@ input[type="checkbox"] {
   background: rgba(12, 16, 20, 0.7);
 }
 
-.time-card--speed {
-  min-width: 112px;
-}
-
 .time-card span {
   display: block;
   margin-bottom: 3px;
@@ -248,9 +244,79 @@ input[type="checkbox"] {
   font-size: 0.94rem;
 }
 
-.control-strip {
+.speedometer {
   position: absolute;
   right: 18px;
+  bottom: 18px;
+  width: 148px;
+  height: 148px;
+}
+
+.speedometer__dial {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border: 1px solid rgba(240, 245, 248, 0.24);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, rgba(12, 16, 20, 0.92) 0 48%, rgba(12, 16, 20, 0.72) 49% 100%),
+    conic-gradient(from 218deg, #cfd6dc 0deg 8deg, transparent 8deg 22deg, #cfd6dc 22deg 30deg, transparent 30deg 52deg, #cfd6dc 52deg 60deg, transparent 60deg 82deg, #cfd6dc 82deg 90deg, transparent 90deg 112deg, #f3c84d 112deg 120deg, transparent 120deg 264deg);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.24);
+}
+
+.speedometer__needle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 54px;
+  border-radius: 999px;
+  background: #f3c84d;
+  transform: translate(-50%, -100%) rotate(-132deg);
+  transform-origin: 50% 100%;
+  transition: transform 70ms linear;
+}
+
+.speedometer__hub {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #edf2f5;
+  transform: translate(-50%, -50%);
+}
+
+.speedometer strong {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 56%;
+  color: #ffffff;
+  font-size: 1.7rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  line-height: 1;
+  text-align: center;
+}
+
+.speedometer span {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 74%;
+  color: #aeb9c2;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.control-strip {
+  position: absolute;
+  left: 18px;
   bottom: 18px;
   display: flex;
   gap: 8px;
@@ -290,15 +356,10 @@ input[type="checkbox"] {
   }
 
   .status-chip {
-    top: auto;
-    bottom: 72px;
-    left: 18px;
-    right: auto;
+    display: none;
   }
 
   .control-strip {
-    left: 18px;
-    right: 18px;
-    justify-content: space-between;
+    display: none;
   }
 }

@@ -47,7 +47,10 @@ export class Track {
   readonly name = "Banked Shakedown";
   readonly roadWidth = 22;
   readonly shoulderWidth = 3.5;
-  readonly barrierOffset = 13;
+  readonly curbWidth = 1.05;
+  readonly wallInnerOffset = this.roadWidth / 2 + this.curbWidth;
+  readonly wallOuterOffset = this.wallInnerOffset + 0.75;
+  readonly barrierOffset = (this.wallInnerOffset + this.wallOuterOffset) / 2;
   readonly checkpointS: number;
   readonly finishS: number;
   readonly startS = 5;
@@ -241,7 +244,7 @@ export class Track {
       const bank = this.bankAt(t);
       const bankRotation = new Quaternion().setFromAxisAngle(tangent, bank);
       const side = baseSide.clone().applyQuaternion(bankRotation).normalize();
-      const normal = UP.clone().applyQuaternion(bankRotation).normalize();
+      const normal = new Vector3().crossVectors(tangent, side).normalize();
 
       return {
         index,

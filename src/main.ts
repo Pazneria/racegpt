@@ -44,7 +44,8 @@ class ChromeDriftApp {
     slipAmount: 0,
     onRoad: true,
     barrierHit: false,
-    engineLoad: 0
+    engineLoad: 0,
+    steerInput: 0
   };
 
   private lastFrame = performance.now();

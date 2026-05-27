@@ -18,10 +18,12 @@ export interface CarTelemetry {
   onRoad: boolean;
   barrierHit: boolean;
   engineLoad: number;
+  steerInput: number;
 }
 
 const WORLD_UP = new Vector3(0, 1, 0);
 const RIDE_HEIGHT = 0.04;
+const COLLISION_HALF_WIDTH = 1.42;
 
 export class Car {
   readonly position = new Vector3();
@@ -79,8 +81,8 @@ export class Car {
     this.driftBlend = damp(this.driftBlend, wantsDrift ? 1 : 0, wantsDrift ? 7 : 3.5, dt);
 
     if (controlsEnabled) {
-      const throttlePower = lerp(32, 13, inverseLerp(0, 46, Math.max(0, localForwardSpeed)));
-      if (throttle > 0 && localForwardSpeed < 46) {
+      const throttlePower = lerp(32, 11.5, inverseLerp(0, 56, Math.max(0, localForwardSpeed)));
+      if (throttle > 0 && localForwardSpeed < 56) {
         this.velocity.addScaledVector(forward, throttle * throttlePower * dt);
       }
 
@@ -117,7 +119,7 @@ export class Car {
       .multiplyScalar(rebuiltForwardSpeed)
       .addScaledVector(currentRight, localSideSpeed);
 
-    const drag = 0.0066 * this.velocity.lengthSq();
+    const drag = 0.0054 * this.velocity.lengthSq();
     if (drag > 0) {
       this.velocity.addScaledVector(this.velocity.clone().normalize(), -drag * dt);
     }
@@ -125,7 +127,7 @@ export class Car {
     this.position.addScaledVector(this.velocity, dt);
 
     const contactAfter = track.getClosestContact(this.position);
-    const barrierHit = this.resolveBarrier(contactAfter, track.barrierOffset);
+    const barrierHit = this.resolveBarrier(contactAfter, track.wallInnerOffset);
     const grounded = track.getClosestContact(this.position);
     this.position.y = grounded.surfacePoint.y + grounded.sample.normal.y * RIDE_HEIGHT;
     this.lastContact = grounded;
@@ -140,7 +142,8 @@ export class Car {
       slipAmount,
       onRoad: grounded.onRoad,
       barrierHit,
-      engineLoad: Math.max(throttle, brake * 0.25, inverseLerp(0, 42, Math.abs(rebuiltForwardSpeed)) * 0.45)
+      engineLoad: Math.max(throttle, brake * 0.25, inverseLerp(0, 52, Math.abs(rebuiltForwardSpeed)) * 0.45),
+      steerInput: steer
     };
   }
 
@@ -167,8 +170,8 @@ export class Car {
     return { forward, right, up };
   }
 
-  private resolveBarrier(contact: TrackContact, barrierOffset: number): boolean {
-    const limit = barrierOffset - 0.85;
+  private resolveBarrier(contact: TrackContact, wallInnerOffset: number): boolean {
+    const limit = wallInnerOffset - COLLISION_HALF_WIDTH;
     if (contact.absLateral <= limit) return false;
 
     const sign = Math.sign(contact.lateral) || 1;
@@ -182,15 +185,16 @@ export class Car {
     const outwardVelocity = this.velocity.dot(outward);
     const forwardAlongTrack = this.velocity.dot(contact.sample.tangent);
     const wallBounce = outwardVelocity > 0 ? outwardVelocity * 1.22 : 0;
+    const hardHit = outwardVelocity > 4.5 || contact.absLateral > limit + 0.45;
     this.velocity
       .addScaledVector(outward, -wallBounce)
-      .addScaledVector(contact.sample.tangent, -forwardAlongTrack * 0.08);
+      .addScaledVector(contact.sample.tangent, -forwardAlongTrack * (hardHit ? 0.18 : 0.08));
 
     const correctedVelocity = this.velocity.lengthSq() > 0.001
       ? Math.atan2(this.velocity.x, this.velocity.z)
       : Math.atan2(contact.sample.tangent.x, contact.sample.tangent.z);
     this.yaw += shortestAngleDelta(this.yaw, correctedVelocity) * 0.16;
 
-    return outwardVelocity > 1.1 || contact.absLateral > limit + 0.45;
+    return outwardVelocity > 1.1 || contact.absLateral > limit + 0.22;
   }
 }

@@ -31,6 +31,7 @@ export class UI {
   private readonly bestTime: HTMLElement;
   private readonly splitTime: HTMLElement;
   private readonly speedValue: HTMLElement;
+  private readonly speedNeedle: HTMLElement;
   private readonly statusChip: HTMLElement;
   private readonly countdown: HTMLElement;
   private readonly finishTime: HTMLElement;
@@ -50,6 +51,7 @@ export class UI {
     this.bestTime = getElement("best-time");
     this.splitTime = getElement("split-time");
     this.speedValue = getElement("speed-value");
+    this.speedNeedle = getElement("speed-needle");
     this.statusChip = getElement("status-chip");
     this.countdown = getElement("countdown");
     this.finishTime = getElement("finish-time");
@@ -105,7 +107,10 @@ export class UI {
     this.currentTime.textContent = formatTime(state.currentMs);
     this.bestTime.textContent = formatTime(state.bestMs);
     this.splitTime.textContent = formatTime(state.splitMs);
-    this.speedValue.textContent = `${Math.round(state.speedKmh)} km/h`;
+    const speed = Math.round(state.speedKmh);
+    const angle = -132 + Math.min(1, speed / 240) * 264;
+    this.speedValue.textContent = String(speed);
+    this.speedNeedle.style.transform = `translate(-50%, -100%) rotate(${angle}deg)`;
     this.statusChip.textContent = state.status;
     this.setHudVisible(state.hudVisible);
   }

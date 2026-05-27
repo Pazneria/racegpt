@@ -27,7 +27,7 @@ export class AudioManager {
   update(telemetry: CarTelemetry, active: boolean): void {
     if (!this.context || !this.engineOsc || !this.engineGain || !this.tireGain) return;
     const now = this.context.currentTime;
-    const speedFactor = Math.min(1, telemetry.speedMps / 48);
+    const speedFactor = Math.min(1, telemetry.speedMps / 58);
     const frequency = 54 + speedFactor * 92 + telemetry.engineLoad * 54;
     const engineLevel = active ? 0.055 + telemetry.engineLoad * 0.075 : 0.025;
     const tireLevel = active ? Math.max(telemetry.slipAmount, telemetry.driftAmount * 0.75) * 0.07 : 0;
