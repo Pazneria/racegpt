@@ -231,19 +231,6 @@ input[type="checkbox"] {
   letter-spacing: 0;
 }
 
-.status-chip {
-  position: absolute;
-  top: 18px;
-  right: 18px;
-  max-width: min(420px, calc(100vw - 36px));
-  padding: 10px 14px;
-  border: 1px solid rgba(240, 245, 248, 0.18);
-  border-radius: 6px;
-  background: rgba(12, 16, 20, 0.7);
-  color: #d9e1e7;
-  font-size: 0.94rem;
-}
-
 .speedometer {
   position: absolute;
   right: 18px;
@@ -388,10 +375,6 @@ input[type="checkbox"] {
   .timing-stack {
     right: 18px;
     flex-direction: column;
-  }
-
-  .status-chip {
-    display: none;
   }
 
   .control-strip {

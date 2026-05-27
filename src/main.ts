@@ -91,8 +91,8 @@ class ChromeDriftApp {
     this.car.resetTo(this.track.startPose, 0);
     this.lastTrackS = this.track.startS;
     this.ui.showMenu();
-    this.updateHud("Ready");
-    this.publishDebugState("Ready");
+    this.updateHud();
+    this.publishDebugState();
     requestAnimationFrame((time) => this.frame(time));
   }
 
@@ -223,9 +223,8 @@ class ChromeDriftApp {
       this.telemetry,
       this.mode === "running" || this.mode === "countdown" || this.mode === "paused"
     );
-    const status = this.getStatusText(input);
-    this.updateHud(status);
-    this.publishDebugState(status);
+    this.updateHud();
+    this.publishDebugState();
 
     requestAnimationFrame((time) => this.frame(time));
   }
@@ -440,7 +439,7 @@ class ChromeDriftApp {
     };
   }
 
-  private updateHud(status: string): void {
+  private updateHud(): void {
     if (this.goFlashRemaining > 0) {
       this.goFlashRemaining = Math.max(0, this.goFlashRemaining - 1 / 60);
       if (this.goFlashRemaining <= 0) this.ui.setCountdown(null);
@@ -453,32 +452,8 @@ class ChromeDriftApp {
       speedKmh: this.telemetry.speedKmh,
       gear: this.telemetry.gear,
       shiftPulse: this.telemetry.shiftPulse,
-      status,
       hudVisible: this.mode !== "menu" && this.mode !== "settings"
     });
-  }
-
-  private getStatusText(input: InputSnapshot): string {
-    if (this.autoplay && this.mode === "running") {
-      const contact = this.car.getContact(this.track);
-      return `Autoplay smoke test · ${Math.round(this.telemetry.speedKmh)} km/h · ${Math.max(
-        0,
-        Math.round(this.track.finishS - contact.s)
-      )} m`;
-    }
-    if (this.mode === "countdown") return "Hold throttle. Launch on GO.";
-    if (this.mode === "paused") return "Paused";
-    if (this.mode === "finished") return "Run complete";
-    if (this.mode !== "running") return "Ready";
-
-    const contact = this.car.getContact(this.track);
-    if (!this.passedCheckpoint) {
-      return `Checkpoint ahead · ${Math.max(0, Math.round(this.track.checkpointS - contact.s))} m`;
-    }
-    if (!input.anyGamepad && this.telemetry.speedKmh < 2) {
-      return "W / Up to launch · Space or S brakes";
-    }
-    return `Finish ahead · ${Math.max(0, Math.round(this.track.finishS - contact.s))} m`;
   }
 
   private getAutopilotInput(base: InputSnapshot): InputSnapshot {
@@ -487,7 +462,7 @@ class ChromeDriftApp {
     return getAutopilotInput(base, this.car, this.track, this.telemetry);
   }
 
-  private publishDebugState(status: string): void {
+  private publishDebugState(): void {
     const contact = this.car.getContact(this.track);
     const debugState = {
       mode: this.mode,
@@ -506,7 +481,6 @@ class ChromeDriftApp {
       z: this.car.position.z,
       yaw: this.car.yaw,
       passedCheckpoint: this.passedCheckpoint,
-      status,
       autoplay: this.autoplay
     };
     window.__chromeDriftDebug = debugState;
@@ -546,7 +520,6 @@ declare global {
       z: number;
       yaw: number;
       passedCheckpoint: boolean;
-      status: string;
       autoplay: boolean;
     };
   }
