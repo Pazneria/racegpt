@@ -38,8 +38,8 @@ export class InputManager {
   snapshot(): InputSnapshot {
     const gamepad = this.readGamepad();
     const steerKeyboard =
-      (this.isHeld("d") || this.isHeld("arrowright") ? 1 : 0) -
-      (this.isHeld("a") || this.isHeld("arrowleft") ? 1 : 0);
+      (this.isHeld("a") || this.isHeld("arrowleft") ? 1 : 0) -
+      (this.isHeld("d") || this.isHeld("arrowright") ? 1 : 0);
     const throttleKeyboard = this.isHeld("w") || this.isHeld("arrowup") ? 1 : 0;
     const brakeKeyboard =
       this.isHeld("s") || this.isHeld("arrowdown") || this.isHeld(" ") ? 1 : 0;
