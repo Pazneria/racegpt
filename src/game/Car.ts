@@ -138,9 +138,9 @@ export class Car {
 
       if (brake > 0) {
         if (localForwardSpeed > 1.2) {
-          this.velocity.addScaledVector(forward, -brake * 42 * dt);
+          this.velocity.addScaledVector(forward, -brake * 30 * dt);
         } else {
-          this.velocity.addScaledVector(forward, -brake * 15 * dt);
+          this.velocity.addScaledVector(forward, -brake * 10 * dt);
         }
       }
 
