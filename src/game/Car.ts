@@ -43,12 +43,12 @@ interface GearDefinition {
 }
 
 const GEARS: GearDefinition[] = [
-  { maxSpeedMps: 20, upSpeedMps: 17, downSpeedMps: 0, torque: 29 },
-  { maxSpeedMps: 32, upSpeedMps: 29, downSpeedMps: 12, torque: 23 },
-  { maxSpeedMps: 47, upSpeedMps: 43, downSpeedMps: 23, torque: 18.5 },
-  { maxSpeedMps: 70, upSpeedMps: 64, downSpeedMps: 36, torque: 15.2 },
-  { maxSpeedMps: 96, upSpeedMps: 88, downSpeedMps: 54, torque: 12.7 },
-  { maxSpeedMps: 122, upSpeedMps: 114, downSpeedMps: 75, torque: 11.5 },
+  { maxSpeedMps: 20, upSpeedMps: 17, downSpeedMps: 0, torque: 16.5 },
+  { maxSpeedMps: 32, upSpeedMps: 29, downSpeedMps: 12, torque: 13.8 },
+  { maxSpeedMps: 47, upSpeedMps: 43, downSpeedMps: 23, torque: 11.6 },
+  { maxSpeedMps: 70, upSpeedMps: 64, downSpeedMps: 36, torque: 10.2 },
+  { maxSpeedMps: 96, upSpeedMps: 88, downSpeedMps: 54, torque: 9.4 },
+  { maxSpeedMps: 122, upSpeedMps: 114, downSpeedMps: 75, torque: 10.1 },
   { maxSpeedMps: 145, upSpeedMps: Number.POSITIVE_INFINITY, downSpeedMps: 98, torque: 13.4 }
 ];
 
