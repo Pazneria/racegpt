@@ -1,5 +1,6 @@
 import "./style.css";
 import { AudioManager } from "./audio/AudioManager";
+import { formatTime } from "./core/math";
 import type { InputSnapshot } from "./input/InputManager";
 import { InputManager } from "./input/InputManager";
 import { Car, type CarSnapshot, type CarTelemetry } from "./game/Car";
@@ -23,7 +24,7 @@ type GameMode = "menu" | "countdown" | "running" | "paused" | "finished" | "sett
 const FIXED_DT = 1 / 120;
 const MAX_STEPS = 6;
 
-class ChromeDriftApp {
+class RaceGptApp {
   private readonly track: Track;
   private readonly codexGhost: GhostRecording;
   private readonly car = new Car();
@@ -70,6 +71,7 @@ class ChromeDriftApp {
   private recordAccumulator = 0;
   private displayInput: InputSnapshot = neutralInput();
   private inputSource = "Keyboard";
+  private lastFinishCopy = "Run complete.";
 
   constructor() {
     const canvas = document.getElementById("game-canvas");
@@ -105,6 +107,7 @@ class ChromeDriftApp {
       returnToArcade: () => this.returnToArcade(),
       setVolume: (volume) => this.updateVolume(volume),
       setCodexGhostEnabled: (enabled) => this.updateCodexGhostEnabled(enabled),
+      setPlayerGhostEnabled: (enabled) => this.updatePlayerGhostEnabled(enabled),
       setInputOverlayEnabled: (enabled) => this.updateInputOverlayEnabled(enabled),
       setTrack: (trackId) => this.selectTrack(trackId)
     });
@@ -189,7 +192,7 @@ class ChromeDriftApp {
     }
     if (this.settingsReturnMode === "finished") {
       this.mode = "finished";
-      this.ui.showFinish(this.runTimeMs, false, this.bestRun?.timeMs ?? null);
+      this.ui.showFinish(this.runTimeMs, this.lastFinishCopy);
       return;
     }
     this.mode = "menu";
@@ -205,6 +208,13 @@ class ChromeDriftApp {
   private updateCodexGhostEnabled(codexGhostEnabled: boolean): void {
     this.settings = { ...this.settings, codexGhostEnabled };
     saveSettings(this.settings);
+    this.ui.syncSettings(this.settings);
+  }
+
+  private updatePlayerGhostEnabled(playerGhostEnabled: boolean): void {
+    this.settings = { ...this.settings, playerGhostEnabled };
+    saveSettings(this.settings);
+    this.ui.syncSettings(this.settings);
   }
 
   private updateInputOverlayEnabled(inputOverlayEnabled: boolean): void {
@@ -443,7 +453,11 @@ class ChromeDriftApp {
     this.mode = "finished";
     this.currentRecording.push(this.toGhostSample(this.runTimeMs));
     const previousBest = this.bestRun?.timeMs ?? null;
-    const isBest = previousBest == null || this.runTimeMs < previousBest;
+    const isPlayerRun = !this.autoplay;
+    const isBest = isPlayerRun && (previousBest == null || this.runTimeMs < previousBest);
+    const beatenModelDelta = isPlayerRun && this.runTimeMs < this.codexGhost.timeMs
+      ? this.codexGhost.timeMs - this.runTimeMs
+      : null;
 
     if (isBest) {
       this.bestRun = {
@@ -456,11 +470,23 @@ class ChromeDriftApp {
     }
 
     this.audio.finish();
-    this.ui.showFinish(this.runTimeMs, isBest, this.bestRun?.timeMs ?? null);
+    this.lastFinishCopy = this.getFinishCopy(isPlayerRun, isBest, previousBest, beatenModelDelta);
+    this.ui.showFinish(this.runTimeMs, this.lastFinishCopy);
   }
 
   private getGhosts(): SceneGhost[] {
     const ghosts: SceneGhost[] = [];
+    const playerSample = this.settings.playerGhostEnabled
+      ? this.getGhostSample(this.bestRun)
+      : null;
+    if (playerSample) {
+      ghosts.push({
+        id: "player-best",
+        name: "Your Best",
+        sample: playerSample
+      });
+    }
+
     const codexSample = this.settings.codexGhostEnabled
       ? this.getGhostSample(this.codexGhost)
       : null;
@@ -473,6 +499,26 @@ class ChromeDriftApp {
     }
 
     return ghosts;
+  }
+
+  private getFinishCopy(
+    isPlayerRun: boolean,
+    isBest: boolean,
+    previousBest: number | null,
+    beatenModelDelta: number | null
+  ): string {
+    if (!isPlayerRun) {
+      return `${CODEX_GHOST_NAME} replay complete. Benchmark time: ${formatTime(this.codexGhost.timeMs)}.`;
+    }
+
+    if (beatenModelDelta != null) {
+      const bestPrefix = isBest ? "New local best saved. " : "";
+      return `${bestPrefix}You beat ${CODEX_GHOST_NAME} by ${formatTime(beatenModelDelta)}.`;
+    }
+
+    if (isBest) return "New local best saved.";
+    if (previousBest != null) return `Run complete. Best remains ${formatTime(previousBest)}.`;
+    return `Run complete. ${CODEX_GHOST_NAME} benchmark: ${formatTime(this.codexGhost.timeMs)}.`;
   }
 
   private getGhostSample(recording: GhostRecording | null): GhostSample | null {
@@ -578,6 +624,7 @@ class ChromeDriftApp {
         brake: this.displayInput.brake
       }
     };
+    window.__raceGptDebug = debugState;
     window.__chromeDriftDebug = debugState;
     document.getElementById("app")?.setAttribute("data-debug-state", JSON.stringify(debugState));
   }
@@ -608,36 +655,39 @@ function neutralInput(): InputSnapshot {
   };
 }
 
-new ChromeDriftApp();
+new RaceGptApp();
+
+type RaceGptDebugState = {
+  mode: GameMode;
+  trackId: string;
+  trackName: string;
+  runTimeMs: number;
+  checkpointMs: number | null;
+  bestTimeMs: number | null;
+  trackS: number;
+  checkpointS: number;
+  finishS: number;
+  speedKmh: number;
+  gear: number;
+  rpmNormalized: number;
+  shiftPulse: number;
+  x: number;
+  y: number;
+  z: number;
+  yaw: number;
+  passedCheckpoint: boolean;
+  autoplay: boolean;
+  input: {
+    source: string;
+    steer: number;
+    throttle: number;
+    brake: number;
+  };
+};
 
 declare global {
   interface Window {
-    __chromeDriftDebug?: {
-      mode: GameMode;
-      trackId: string;
-      trackName: string;
-      runTimeMs: number;
-      checkpointMs: number | null;
-      bestTimeMs: number | null;
-      trackS: number;
-      checkpointS: number;
-      finishS: number;
-      speedKmh: number;
-      gear: number;
-      rpmNormalized: number;
-      shiftPulse: number;
-      x: number;
-      y: number;
-      z: number;
-      yaw: number;
-      passedCheckpoint: boolean;
-      autoplay: boolean;
-      input: {
-        source: string;
-        steer: number;
-        throttle: number;
-        brake: number;
-      };
-    };
+    __raceGptDebug?: RaceGptDebugState;
+    __chromeDriftDebug?: RaceGptDebugState;
   }
 }

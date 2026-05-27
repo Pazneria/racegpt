@@ -26,6 +26,7 @@ export interface UIActions {
   returnToArcade: () => void;
   setVolume: (volume: number) => void;
   setCodexGhostEnabled: (enabled: boolean) => void;
+  setPlayerGhostEnabled: (enabled: boolean) => void;
   setInputOverlayEnabled: (enabled: boolean) => void;
   setTrack: (trackId: string) => void;
 }
@@ -64,6 +65,7 @@ export class UI {
   private readonly finishCopy: HTMLElement;
   private readonly volumeSlider: HTMLInputElement;
   private readonly codexGhostToggle: HTMLInputElement;
+  private readonly playerGhostToggle: HTMLInputElement;
   private readonly inputOverlayToggle: HTMLInputElement;
   private readonly trackButtons: HTMLButtonElement[];
 
@@ -97,6 +99,7 @@ export class UI {
     this.finishCopy = getElement("finish-copy");
     this.volumeSlider = getInput("volume-slider");
     this.codexGhostToggle = getInput("codex-ghost-toggle");
+    this.playerGhostToggle = getInput("player-ghost-toggle");
     this.inputOverlayToggle = getInput("input-overlay-toggle");
     this.trackButtons = Array.from(document.querySelectorAll<HTMLButtonElement>(".track-option"));
 
@@ -106,6 +109,7 @@ export class UI {
   syncSettings(settings: GameSettings): void {
     this.volumeSlider.value = String(settings.volume);
     this.codexGhostToggle.checked = settings.codexGhostEnabled;
+    this.playerGhostToggle.checked = settings.playerGhostEnabled;
     this.inputOverlayToggle.checked = settings.inputOverlayEnabled;
   }
 
@@ -153,11 +157,9 @@ export class UI {
     this.show("settings");
   }
 
-  showFinish(timeMs: number, isBest: boolean, bestMs: number | null): void {
+  showFinish(timeMs: number, copy: string): void {
     this.finishTime.textContent = formatTime(timeMs);
-    this.finishCopy.textContent = isBest
-      ? "New local best saved."
-      : `Run complete. Best remains ${formatTime(bestMs)}.`;
+    this.finishCopy.textContent = copy;
     this.show("finish");
     this.setHudVisible(true);
     this.setCountdown(null);
@@ -236,6 +238,9 @@ export class UI {
     });
     this.codexGhostToggle.addEventListener("change", () => {
       this.actions.setCodexGhostEnabled(this.codexGhostToggle.checked);
+    });
+    this.playerGhostToggle.addEventListener("change", () => {
+      this.actions.setPlayerGhostEnabled(this.playerGhostToggle.checked);
     });
     this.inputOverlayToggle.addEventListener("change", () => {
       this.actions.setInputOverlayEnabled(this.inputOverlayToggle.checked);

@@ -7,17 +7,17 @@
       name="description"
       content="A browser-playable 3D time-attack racing prototype."
     />
-    <title>Chrome Drift</title>
+    <title>RaceGPT</title>
   </head>
   <body>
     <main id="app">
-      <canvas id="game-canvas" aria-label="Chrome Drift game canvas"></canvas>
+      <canvas id="game-canvas" aria-label="RaceGPT game canvas"></canvas>
       <div id="ghost-nameplates" class="ghost-nameplates" aria-hidden="true"></div>
 
       <section id="menu-screen" class="screen screen--visible">
         <div class="menu-shell">
           <p class="eyebrow">Private Test Facility</p>
-          <h1>Chrome Drift</h1>
+          <h1>RaceGPT</h1>
           <p class="menu-copy">
             A short point-to-point time attack. One car, one checkpoint, one clean run.
           </p>
@@ -25,12 +25,12 @@
             <button class="track-option" type="button" data-track-id="banked-shakedown">
               <span class="track-card__label">Track 01</span>
               <strong>Test Track A</strong>
-              <span>30-60 sec target · benchmark ghost · checkpoint split</span>
+              <span>30-60 sec target - model ghost - checkpoint split</span>
             </button>
             <button class="track-option" type="button" data-track-id="test-track-b">
               <span class="track-card__label">Track 02</span>
               <strong>Test Track B</strong>
-              <span>Long route · benchmark ghost · higher speed</span>
+              <span>Long route - model ghost - higher speed</span>
             </button>
           </div>
           <div class="menu-actions">
@@ -38,7 +38,7 @@
             <button id="settings-button" type="button">Settings</button>
             <button id="return-button" type="button">Return to Arcade</button>
           </div>
-          <p class="small-note">WASD / arrows to drive · Space brakes · R resets · Enter restarts</p>
+          <p class="small-note">WASD / arrows to drive - Space brakes - R resets - Enter restarts</p>
         </div>
       </section>
 
@@ -76,7 +76,11 @@
             <input id="volume-slider" type="range" min="0" max="1" step="0.01" />
           </label>
           <label class="setting-row setting-row--check">
-            <span>Codex 5.5 benchmark ghost</span>
+            <span>Your best ghost</span>
+            <input id="player-ghost-toggle" type="checkbox" />
+          </label>
+          <label class="setting-row setting-row--check">
+            <span>Model ghosts</span>
             <input id="codex-ghost-toggle" type="checkbox" />
           </label>
           <label class="setting-row setting-row--check">

@@ -1,9 +1,8 @@
-# Chrome Drift
+# RaceGPT
 
 Browser-playable 3D time-attack racing MVP.
 
-The name is a placeholder. The build target comes from the spec in
-`../racing-game-mvp/docs`.
+The build target comes from the spec in `../racing-game-mvp/docs`.
 
 ## Controls
 
@@ -30,7 +29,7 @@ Vite defaults to `http://127.0.0.1:5178`.
 npm.cmd run build
 ```
 
-The production base path is `/chrome-drift/` for GitHub Pages.
+The production base path is still `/chrome-drift/` for GitHub Pages.
 
 ## Implementation Notes
 

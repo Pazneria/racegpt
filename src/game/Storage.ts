@@ -1,6 +1,7 @@
 export interface GameSettings {
   volume: number;
   codexGhostEnabled: boolean;
+  playerGhostEnabled: boolean;
   inputOverlayEnabled: boolean;
   selectedTrackId: string;
 }
@@ -20,19 +21,21 @@ export interface GhostRecording {
   samples: GhostSample[];
 }
 
-const SETTINGS_KEY = "chrome-drift:settings";
+const SETTINGS_KEY = "racegpt:settings";
+const LEGACY_SETTINGS_KEY = "chrome-drift:settings";
 const DEFAULT_TRACK_ID = "banked-shakedown";
 
 const DEFAULT_SETTINGS: GameSettings = {
   volume: 0.65,
   codexGhostEnabled: true,
+  playerGhostEnabled: true,
   inputOverlayEnabled: false,
   selectedTrackId: DEFAULT_TRACK_ID
 };
 
 export function loadSettings(): GameSettings {
   try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
+    const raw = localStorage.getItem(SETTINGS_KEY) ?? localStorage.getItem(LEGACY_SETTINGS_KEY);
     if (!raw) return { ...DEFAULT_SETTINGS };
     const parsed = JSON.parse(raw) as Partial<GameSettings>;
     return {
@@ -41,6 +44,10 @@ export function loadSettings(): GameSettings {
         typeof parsed.codexGhostEnabled === "boolean"
           ? parsed.codexGhostEnabled
           : DEFAULT_SETTINGS.codexGhostEnabled,
+      playerGhostEnabled:
+        typeof parsed.playerGhostEnabled === "boolean"
+          ? parsed.playerGhostEnabled
+          : DEFAULT_SETTINGS.playerGhostEnabled,
       inputOverlayEnabled:
         typeof parsed.inputOverlayEnabled === "boolean"
           ? parsed.inputOverlayEnabled
@@ -78,5 +85,5 @@ export function saveBestRun(recording: GhostRecording): void {
 }
 
 function bestRunKey(trackId: string): string {
-  return `chrome-drift:best-run:${trackId}:v3`;
+  return `racegpt:best-run:${trackId}:v1`;
 }
