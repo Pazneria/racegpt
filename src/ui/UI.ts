@@ -51,6 +51,7 @@ export class UI {
   private readonly speedometerDial: HTMLElement;
   private readonly inputOverlay: HTMLElement;
   private readonly inputSource: HTMLElement;
+  private readonly inputSteerFill: HTMLElement;
   private readonly inputSteerDot: HTMLElement;
   private readonly inputThrottleFill: HTMLElement;
   private readonly inputBrakeFill: HTMLElement;
@@ -83,6 +84,7 @@ export class UI {
     this.speedometerDial = getElement("speedometer-dial");
     this.inputOverlay = getElement("input-overlay");
     this.inputSource = getElement("input-source");
+    this.inputSteerFill = getElement("input-steer-fill");
     this.inputSteerDot = getElement("input-steer-dot");
     this.inputThrottleFill = getElement("input-throttle-fill");
     this.inputBrakeFill = getElement("input-brake-fill");
@@ -176,7 +178,15 @@ export class UI {
       state.hudVisible && state.inputOverlayVisible
     );
     this.inputSource.textContent = state.inputSource;
-    this.inputSteerDot.style.transform = `translate(${clamp(state.inputSteer, -1, 1) * 72}px, -50%)`;
+    const steer = clamp(state.inputSteer, -1, 1);
+    const visualSteer = -steer;
+    const steerFillFromCenter = visualSteer >= 0 ? "50%" : "auto";
+    const steerFillToCenter = visualSteer >= 0 ? "auto" : "50%";
+    this.inputSteerFill.style.left = steerFillFromCenter;
+    this.inputSteerFill.style.right = steerFillToCenter;
+    this.inputSteerFill.style.transformOrigin = visualSteer >= 0 ? "left center" : "right center";
+    this.inputSteerFill.style.transform = `scaleX(${Math.abs(visualSteer)})`;
+    this.inputSteerDot.style.transform = `translate(${visualSteer * 60}px, -50%)`;
     this.inputThrottleFill.style.transform = `scaleY(${clamp(state.inputThrottle, 0, 1)})`;
     this.inputBrakeFill.style.transform = `scaleY(${clamp(state.inputBrake, 0, 1)})`;
     this.setHudVisible(state.hudVisible);

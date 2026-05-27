@@ -449,12 +449,25 @@ input[type="checkbox"] {
 
 .input-overlay__steer-track {
   position: relative;
+  overflow: hidden;
   height: 18px;
   border: 1px solid rgba(240, 245, 248, 0.16);
   border-radius: 999px;
   background:
     linear-gradient(90deg, transparent 49%, rgba(240, 245, 248, 0.34) 49% 51%, transparent 51%),
     rgba(255, 255, 255, 0.055);
+}
+
+.input-overlay__steer-track em {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 50%;
+  background: rgba(243, 200, 77, 0.42);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 70ms linear;
 }
 
 .input-overlay__steer-track i {
