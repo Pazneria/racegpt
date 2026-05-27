@@ -12,6 +12,7 @@
   <body>
     <main id="app">
       <canvas id="game-canvas" aria-label="Chrome Drift game canvas"></canvas>
+      <div id="ghost-nameplates" class="ghost-nameplates" aria-hidden="true"></div>
 
       <section id="menu-screen" class="screen screen--visible">
         <div class="menu-shell">
@@ -20,10 +21,17 @@
           <p class="menu-copy">
             A short point-to-point time attack. One car, one checkpoint, one clean run.
           </p>
-          <div class="track-card" aria-label="Selected track">
-            <span class="track-card__label">Track 01</span>
-            <strong>Banked Shakedown</strong>
-            <span>30-60 sec target · local ghost · checkpoint split</span>
+          <div class="track-select" aria-label="Track selection">
+            <button class="track-option" type="button" data-track-id="banked-shakedown">
+              <span class="track-card__label">Track 01</span>
+              <strong>Test Track A</strong>
+              <span>30-60 sec target · benchmark ghost · checkpoint split</span>
+            </button>
+            <button class="track-option" type="button" data-track-id="test-track-b">
+              <span class="track-card__label">Track 02</span>
+              <strong>Test Track B</strong>
+              <span>Long route · benchmark ghost · higher speed</span>
+            </button>
           </div>
           <div class="menu-actions">
             <button id="start-button" class="primary-button" type="button">Start Run</button>
@@ -37,7 +45,7 @@
       <section id="pause-screen" class="screen">
         <div class="dialog">
           <p class="eyebrow">Paused</p>
-          <h2>Banked Shakedown</h2>
+          <h2 id="pause-track-name">Test Track A</h2>
           <div class="menu-actions">
             <button id="resume-button" class="primary-button" type="button">Resume</button>
             <button id="pause-restart-button" type="button">Restart Run</button>
@@ -68,8 +76,8 @@
             <input id="volume-slider" type="range" min="0" max="1" step="0.01" />
           </label>
           <label class="setting-row setting-row--check">
-            <span>Best-run ghost</span>
-            <input id="ghost-toggle" type="checkbox" />
+            <span>Codex 5.5 benchmark ghost</span>
+            <input id="codex-ghost-toggle" type="checkbox" />
           </label>
           <div class="menu-actions">
             <button id="settings-back-button" class="primary-button" type="button">Back</button>

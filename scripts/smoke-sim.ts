@@ -3,7 +3,8 @@ import { getAutopilotInput } from "../src/game/Autopilot";
 import { Track } from "../src/game/Track";
 import type { InputSnapshot } from "../src/input/InputManager";
 
-const track = new Track();
+const trackArg = process.argv.find((arg) => arg.startsWith("--track="));
+const track = new Track(trackArg?.slice("--track=".length));
 const car = new Car();
 let telemetry: CarTelemetry = {
   speedMps: 0,
@@ -37,7 +38,7 @@ let timeMs = 0;
 let lastS = track.startS;
 let checkpointMs: number | null = null;
 
-for (let step = 0; step < 120 * 90; step += 1) {
+for (let step = 0; step < 120 * 180; step += 1) {
   const input = getAutopilotInput(neutralInput, car, track, telemetry);
   telemetry = car.update(input, track, dt, true);
   timeMs += dt * 1000;
@@ -52,6 +53,7 @@ for (let step = 0; step < 120 * 90; step += 1) {
       JSON.stringify(
         {
           ok: true,
+          trackId: track.id,
           finishMs: Math.round(timeMs),
           checkpointMs: checkpointMs == null ? null : Math.round(checkpointMs),
           speedKmh: Math.round(telemetry.speedKmh),
@@ -72,6 +74,7 @@ console.error(
   JSON.stringify(
     {
       ok: false,
+      trackId: track.id,
       timeMs: Math.round(timeMs),
       checkpointMs: checkpointMs == null ? null : Math.round(checkpointMs),
       speedKmh: Math.round(telemetry.speedKmh),

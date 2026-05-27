@@ -3,6 +3,7 @@ import { AudioManager } from "./audio/AudioManager";
 import type { InputSnapshot } from "./input/InputManager";
 import { InputManager } from "./input/InputManager";
 import { Car, type CarSnapshot, type CarTelemetry } from "./game/Car";
+import { CODEX_GHOST_NAME, createCodexGhostRecording } from "./game/CodexGhost";
 import { getAutopilotInput } from "./game/Autopilot";
 import {
   loadBestRun,
@@ -13,8 +14,8 @@ import {
   type GhostRecording,
   type GhostSample
 } from "./game/Storage";
-import { Track } from "./game/Track";
-import { SceneRenderer } from "./render/SceneRenderer";
+import { Track, TRACK_DEFINITIONS } from "./game/Track";
+import { SceneRenderer, type SceneGhost } from "./render/SceneRenderer";
 import { UI } from "./ui/UI";
 
 type GameMode = "menu" | "countdown" | "running" | "paused" | "finished" | "settings";
@@ -23,7 +24,8 @@ const FIXED_DT = 1 / 120;
 const MAX_STEPS = 6;
 
 class ChromeDriftApp {
-  private readonly track = new Track();
+  private readonly track: Track;
+  private readonly codexGhost: GhostRecording;
   private readonly car = new Car();
   private readonly input = new InputManager();
   private readonly audio = new AudioManager();
@@ -34,7 +36,7 @@ class ChromeDriftApp {
   private readonly muted = this.urlParams.has("muted");
 
   private settings: GameSettings = loadSettings();
-  private bestRun: GhostRecording | null = loadBestRun();
+  private bestRun: GhostRecording | null = null;
   private mode: GameMode = "menu";
   private settingsReturnMode: GameMode = "menu";
   private telemetry: CarTelemetry = {
@@ -73,7 +75,20 @@ class ChromeDriftApp {
       throw new Error("Missing game canvas");
     }
 
-    this.renderer = new SceneRenderer(canvas, this.track);
+    this.track = new Track(this.urlParams.get("track") ?? this.settings.selectedTrackId);
+    if (this.settings.selectedTrackId !== this.track.id) {
+      this.settings = { ...this.settings, selectedTrackId: this.track.id };
+      saveSettings(this.settings);
+    }
+    this.bestRun = loadBestRun(this.track.id);
+    this.codexGhost = createCodexGhostRecording(this.track);
+    this.renderer = new SceneRenderer(canvas, this.track, [
+      {
+        rank: 1,
+        name: CODEX_GHOST_NAME,
+        timeMs: this.codexGhost.timeMs
+      }
+    ]);
     this.ui = new UI({
       startRun: () => this.startRunFromGesture(),
       resume: () => this.resumeFromPause(),
@@ -83,11 +98,13 @@ class ChromeDriftApp {
       mainMenu: () => this.returnToMenu(),
       returnToArcade: () => this.returnToArcade(),
       setVolume: (volume) => this.updateVolume(volume),
-      setGhostEnabled: (enabled) => this.updateGhostEnabled(enabled)
+      setCodexGhostEnabled: (enabled) => this.updateCodexGhostEnabled(enabled),
+      setTrack: (trackId) => this.selectTrack(trackId)
     });
 
     this.audio.setVolume(this.muted ? 0 : this.settings.volume);
     this.ui.syncSettings(this.settings);
+    this.ui.syncTracks(this.track.id, TRACK_DEFINITIONS);
     this.configureShowcaseBanner();
     this.car.resetTo(this.track.startPose, 0);
     this.lastTrackS = this.track.startS;
@@ -178,9 +195,23 @@ class ChromeDriftApp {
     saveSettings(this.settings);
   }
 
-  private updateGhostEnabled(ghostEnabled: boolean): void {
-    this.settings = { ...this.settings, ghostEnabled };
+  private updateCodexGhostEnabled(codexGhostEnabled: boolean): void {
+    this.settings = { ...this.settings, codexGhostEnabled };
     saveSettings(this.settings);
+  }
+
+  private selectTrack(trackId: string): void {
+    if (trackId === this.track.id) return;
+    this.settings = { ...this.settings, selectedTrackId: trackId };
+    saveSettings(this.settings);
+    const params = new URLSearchParams(window.location.search);
+    params.set("track", trackId);
+    params.delete("autoplay");
+    params.delete("qa");
+    params.delete("showcase");
+    params.delete("showcaseTitle");
+    params.delete("showcaseCopy");
+    window.location.search = params.toString();
   }
 
   private configureShowcaseBanner(): void {
@@ -227,8 +258,8 @@ class ChromeDriftApp {
     }
     if (steps === MAX_STEPS) this.accumulator = 0;
 
-    const ghost = this.getGhostSample();
-    this.renderer.update(this.car, this.telemetry, ghost, rawDt);
+    const ghosts = this.getGhosts();
+    this.renderer.update(this.car, this.telemetry, ghosts, rawDt);
     this.audio.update(
       this.telemetry,
       this.mode === "running" || this.mode === "countdown" || this.mode === "paused"
@@ -408,13 +439,27 @@ class ChromeDriftApp {
     this.ui.showFinish(this.runTimeMs, isBest, this.bestRun?.timeMs ?? null);
   }
 
-  private getGhostSample(): GhostSample | null {
-    if (!this.settings.ghostEnabled || !this.bestRun || this.bestRun.samples.length < 2) {
-      return null;
+  private getGhosts(): SceneGhost[] {
+    const ghosts: SceneGhost[] = [];
+    const codexSample = this.settings.codexGhostEnabled
+      ? this.getGhostSample(this.codexGhost)
+      : null;
+    if (codexSample) {
+      ghosts.push({
+        id: "codex",
+        name: CODEX_GHOST_NAME,
+        sample: codexSample
+      });
     }
+
+    return ghosts;
+  }
+
+  private getGhostSample(recording: GhostRecording | null): GhostSample | null {
+    if (!recording || recording.samples.length < 2 || recording.trackId !== this.track.id) return null;
     if (this.mode !== "running" && this.mode !== "countdown") return null;
     const time = this.mode === "countdown" ? 0 : this.runTimeMs;
-    const samples = this.bestRun.samples;
+    const samples = recording.samples;
     if (time <= samples[0].timeMs) return samples[0];
     if (time >= samples[samples.length - 1].timeMs) return samples[samples.length - 1];
 
@@ -476,6 +521,8 @@ class ChromeDriftApp {
     const contact = this.car.getContact(this.track);
     const debugState = {
       mode: this.mode,
+      trackId: this.track.id,
+      trackName: this.track.name,
       runTimeMs: this.runTimeMs,
       checkpointMs: this.checkpointMs,
       bestTimeMs: this.bestRun?.timeMs ?? null,
@@ -515,6 +562,8 @@ declare global {
   interface Window {
     __chromeDriftDebug?: {
       mode: GameMode;
+      trackId: string;
+      trackName: string;
       runTimeMs: number;
       checkpointMs: number | null;
       bestTimeMs: number | null;

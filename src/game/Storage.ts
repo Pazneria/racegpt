@@ -1,6 +1,7 @@
 export interface GameSettings {
   volume: number;
-  ghostEnabled: boolean;
+  codexGhostEnabled: boolean;
+  selectedTrackId: string;
 }
 
 export interface GhostSample {
@@ -19,11 +20,12 @@ export interface GhostRecording {
 }
 
 const SETTINGS_KEY = "chrome-drift:settings";
-const BEST_RUN_KEY = "chrome-drift:best-run:banked-shakedown:v3";
+const DEFAULT_TRACK_ID = "banked-shakedown";
 
 const DEFAULT_SETTINGS: GameSettings = {
   volume: 0.65,
-  ghostEnabled: true
+  codexGhostEnabled: true,
+  selectedTrackId: DEFAULT_TRACK_ID
 };
 
 export function loadSettings(): GameSettings {
@@ -33,10 +35,14 @@ export function loadSettings(): GameSettings {
     const parsed = JSON.parse(raw) as Partial<GameSettings>;
     return {
       volume: typeof parsed.volume === "number" ? parsed.volume : DEFAULT_SETTINGS.volume,
-      ghostEnabled:
-        typeof parsed.ghostEnabled === "boolean"
-          ? parsed.ghostEnabled
-          : DEFAULT_SETTINGS.ghostEnabled
+      codexGhostEnabled:
+        typeof parsed.codexGhostEnabled === "boolean"
+          ? parsed.codexGhostEnabled
+          : DEFAULT_SETTINGS.codexGhostEnabled,
+      selectedTrackId:
+        typeof parsed.selectedTrackId === "string"
+          ? parsed.selectedTrackId
+          : DEFAULT_SETTINGS.selectedTrackId
     };
   } catch {
     return { ...DEFAULT_SETTINGS };
@@ -47,9 +53,9 @@ export function saveSettings(settings: GameSettings): void {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 }
 
-export function loadBestRun(): GhostRecording | null {
+export function loadBestRun(trackId = DEFAULT_TRACK_ID): GhostRecording | null {
   try {
-    const raw = localStorage.getItem(BEST_RUN_KEY);
+    const raw = localStorage.getItem(bestRunKey(trackId));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as GhostRecording;
     if (!parsed || !Array.isArray(parsed.samples) || !Number.isFinite(parsed.timeMs)) {
@@ -62,5 +68,9 @@ export function loadBestRun(): GhostRecording | null {
 }
 
 export function saveBestRun(recording: GhostRecording): void {
-  localStorage.setItem(BEST_RUN_KEY, JSON.stringify(recording));
+  localStorage.setItem(bestRunKey(recording.trackId), JSON.stringify(recording));
+}
+
+function bestRunKey(trackId: string): string {
+  return `chrome-drift:best-run:${trackId}:v3`;
 }

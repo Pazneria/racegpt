@@ -71,6 +71,7 @@ export class Car {
     this.velocity.set(0, 0, 0);
     this.yaw = pose.yaw;
     this.driftBlend = 0;
+    this.lastContact = null;
     this.resetDrivetrain();
     return this.snapshot(timeMs);
   }
@@ -86,6 +87,7 @@ export class Car {
     this.shiftPulse = 0;
     this.upshiftHold = 0;
     this.downshiftHold = 0;
+    this.lastContact = null;
   }
 
   snapshot(timeMs: number): CarSnapshot {
@@ -105,7 +107,7 @@ export class Car {
     dt: number,
     controlsEnabled: boolean
   ): CarTelemetry {
-    const contactBefore = track.getClosestContact(this.position);
+    const contactBefore = track.getClosestContact(this.position, this.lastContact?.s);
     this.lastContact = contactBefore;
 
     const throttle = controlsEnabled ? clamp(input.throttle, 0, 1) : 0;
@@ -177,9 +179,9 @@ export class Car {
 
     this.position.addScaledVector(this.velocity, dt);
 
-    const contactAfter = track.getClosestContact(this.position);
+    const contactAfter = track.getClosestContact(this.position, contactBefore.s);
     const barrierHit = this.resolveBarrier(contactAfter, track.wallInnerOffset);
-    const grounded = track.getClosestContact(this.position);
+    const grounded = track.getClosestContact(this.position, contactAfter.s);
     this.position.y = grounded.surfacePoint.y + grounded.sample.normal.y * RIDE_HEIGHT;
     this.lastContact = grounded;
 
@@ -210,7 +212,7 @@ export class Car {
   }
 
   getContact(track: Track): TrackContact {
-    this.lastContact = track.getClosestContact(this.position);
+    this.lastContact = track.getClosestContact(this.position, this.lastContact?.s);
     return this.lastContact;
   }
 

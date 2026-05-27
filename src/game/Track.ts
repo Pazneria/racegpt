@@ -39,13 +39,124 @@ export interface TrackPose {
   sample: TrackSample;
 }
 
+export interface TrackDefinition {
+  id: string;
+  label: string;
+  name: string;
+  menuDescription: string;
+  sampleCount: number;
+  checkpointRatio: number;
+  finishPadding: number;
+  tension: number;
+  points: Vector3[];
+  bankAt: (t: number) => number;
+}
+
 const UP = new Vector3(0, 1, 0);
-const SAMPLE_COUNT = 640;
 const BANK_EDGE_CLEARANCE = 0.18;
 
+export const TRACK_DEFINITIONS: TrackDefinition[] = [
+  {
+    id: "banked-shakedown",
+    label: "Track 01",
+    name: "Test Track A",
+    menuDescription: "30-60 sec target · benchmark ghost · checkpoint split",
+    sampleCount: 640,
+    checkpointRatio: 0.46,
+    finishPadding: 7,
+    tension: 0.35,
+    points: [
+      new Vector3(0, 0, 0),
+      new Vector3(0, 0, 82),
+      new Vector3(24, 2, 126),
+      new Vector3(78, 8, 158),
+      new Vector3(138, 12, 148),
+      new Vector3(188, 12, 112),
+      new Vector3(225, 9, 70),
+      new Vector3(228, 6, 18),
+      new Vector3(205, 3, -33),
+      new Vector3(168, 1, -76),
+      new Vector3(160, 0, -176),
+      new Vector3(190, 0, -262),
+      new Vector3(256, 4, -318),
+      new Vector3(332, 10, -300),
+      new Vector3(386, 13, -236),
+      new Vector3(412, 13, -160),
+      new Vector3(398, 10, -88),
+      new Vector3(448, 6, -28),
+      new Vector3(498, 2, 58),
+      new Vector3(500, 0, 154),
+      new Vector3(462, 0, 244)
+    ],
+    bankAt: bankTestTrackA
+  },
+  {
+    id: "test-track-b",
+    label: "Track 02",
+    name: "Test Track B",
+    menuDescription: "Long route · benchmark ghost · higher speed",
+    sampleCount: 1280,
+    checkpointRatio: 0.5,
+    finishPadding: 8,
+    tension: 0.32,
+    points: scaleTrackPoints([
+      new Vector3(0, 0, 0),
+      new Vector3(0, 0, 135),
+      new Vector3(46, 2, 260),
+      new Vector3(188, 7, 348),
+      new Vector3(356, 12, 326),
+      new Vector3(520, 12, 228),
+      new Vector3(622, 8, 76),
+      new Vector3(630, 4, -116),
+      new Vector3(534, 1, -282),
+      new Vector3(360, 0, -362),
+      new Vector3(184, 0, -362),
+      new Vector3(74, 0, -498),
+      new Vector3(112, 4, -664),
+      new Vector3(286, 9, -792),
+      new Vector3(520, 13, -816),
+      new Vector3(746, 12, -724),
+      new Vector3(904, 8, -552),
+      new Vector3(946, 4, -344),
+      new Vector3(850, 1, -146),
+      new Vector3(676, 0, -54),
+      new Vector3(610, 0, 112),
+      new Vector3(718, 4, 280),
+      new Vector3(928, 9, 382),
+      new Vector3(1184, 12, 350),
+      new Vector3(1368, 10, 202),
+      new Vector3(1428, 5, 0),
+      new Vector3(1354, 1, -206),
+      new Vector3(1174, 0, -342),
+      new Vector3(1038, 0, -506),
+      new Vector3(1112, 4, -682),
+      new Vector3(1320, 8, -806),
+      new Vector3(1588, 9, -768),
+      new Vector3(1792, 5, -602),
+      new Vector3(1884, 1, -374),
+      new Vector3(1824, 0, -130),
+      new Vector3(1656, 0, 54),
+      new Vector3(1612, 0, 244),
+      new Vector3(1764, 2, 418),
+      new Vector3(2028, 0, 514)
+    ], 0.52),
+    bankAt: bankTestTrackB
+  }
+];
+
+export function getTrackDefinition(id: string | null | undefined): TrackDefinition {
+  return TRACK_DEFINITIONS.find((track) => track.id === id) ?? TRACK_DEFINITIONS[0];
+}
+
+function scaleTrackPoints(points: Vector3[], horizontalScale: number): Vector3[] {
+  return points.map((point) => new Vector3(point.x * horizontalScale, point.y, point.z * horizontalScale));
+}
+
 export class Track {
-  readonly id = "banked-shakedown";
-  readonly name = "Banked Shakedown";
+  readonly id: string;
+  readonly label: string;
+  readonly name: string;
+  readonly menuDescription: string;
   readonly roadWidth = 22;
   readonly shoulderWidth = 3.5;
   readonly curbWidth = 1.05;
@@ -57,12 +168,18 @@ export class Track {
   readonly startS = 5;
   readonly samples: TrackSample[];
   readonly length: number;
+  private readonly definition: TrackDefinition;
 
-  constructor() {
+  constructor(trackId?: string | null) {
+    this.definition = getTrackDefinition(trackId);
+    this.id = this.definition.id;
+    this.label = this.definition.label;
+    this.name = this.definition.name;
+    this.menuDescription = this.definition.menuDescription;
     this.samples = this.buildSamples();
     this.length = this.samples[this.samples.length - 1].s;
-    this.checkpointS = this.length * 0.46;
-    this.finishS = this.length - 7;
+    this.checkpointS = this.length * this.definition.checkpointRatio;
+    this.finishS = this.length - this.definition.finishPadding;
   }
 
   get startPose(): TrackPose {
@@ -109,11 +226,27 @@ export class Track {
     };
   }
 
-  getClosestContact(position: Vector3): TrackContact {
+  getClosestContact(position: Vector3, hintS?: number, searchWindow = 90): TrackContact {
     let best = this.samples[0];
     let bestDistance = Number.POSITIVE_INFINITY;
+    const hinted = hintS != null && Number.isFinite(hintS);
+    const centerIndex = hinted ? this.findSampleIndexAtS(hintS) : 0;
+    let startIndex = 0;
+    let endIndex = this.samples.length - 1;
 
-    for (const sample of this.samples) {
+    if (hinted) {
+      const minS = Math.max(0, hintS - searchWindow);
+      const maxS = Math.min(this.length, hintS + searchWindow);
+      startIndex = centerIndex;
+      while (startIndex > 0 && this.samples[startIndex].s > minS) startIndex -= 1;
+      endIndex = centerIndex;
+      while (endIndex < this.samples.length - 1 && this.samples[endIndex].s < maxS) {
+        endIndex += 1;
+      }
+    }
+
+    for (let index = startIndex; index <= endIndex; index += 1) {
+      const sample = this.samples[index];
       const dx = position.x - sample.center.x;
       const dy = (position.y - sample.center.y) * 0.35;
       const dz = position.z - sample.center.z;
@@ -143,6 +276,18 @@ export class Track {
       onShoulder: absLateral <= this.roadWidth / 2 + this.shoulderWidth,
       surfacePoint
     };
+  }
+
+  private findSampleIndexAtS(s: number): number {
+    const clampedS = clamp(s, 0, this.length);
+    let low = 0;
+    let high = this.samples.length - 1;
+    while (low < high) {
+      const mid = Math.floor((low + high) / 2);
+      if (this.samples[mid].s < clampedS) low = mid + 1;
+      else high = mid;
+    }
+    return low;
   }
 
   getSurfacePoint(sample: TrackSample, lateral: number): Vector3 {
@@ -202,35 +347,13 @@ export class Track {
 
   private buildSamples(): TrackSample[] {
     const curve = new CatmullRomCurve3(
-      [
-        new Vector3(0, 0, 0),
-        new Vector3(0, 0, 82),
-        new Vector3(24, 2, 126),
-        new Vector3(78, 8, 158),
-        new Vector3(138, 12, 148),
-        new Vector3(188, 12, 112),
-        new Vector3(225, 9, 70),
-        new Vector3(228, 6, 18),
-        new Vector3(205, 3, -33),
-        new Vector3(168, 1, -76),
-        new Vector3(160, 0, -176),
-        new Vector3(190, 0, -262),
-        new Vector3(256, 4, -318),
-        new Vector3(332, 10, -300),
-        new Vector3(386, 13, -236),
-        new Vector3(412, 13, -160),
-        new Vector3(398, 10, -88),
-        new Vector3(448, 6, -28),
-        new Vector3(498, 2, 58),
-        new Vector3(500, 0, 154),
-        new Vector3(462, 0, 244)
-      ],
+      this.definition.points,
       false,
       "catmullrom",
-      0.35
+      this.definition.tension
     );
 
-    const rawPoints = curve.getSpacedPoints(SAMPLE_COUNT - 1);
+    const rawPoints = curve.getSpacedPoints(this.definition.sampleCount - 1);
     const points = rawPoints.map((point, index) =>
       this.liftBankedPoint(point, rawPoints, index)
     );
@@ -265,10 +388,7 @@ export class Track {
   }
 
   private bankAt(t: number): number {
-    const rightTurn = smoothstep(0.12, 0.26, t) - smoothstep(0.48, 0.61, t);
-    const downhillLeft = smoothstep(0.40, 0.48, t) - smoothstep(0.58, 0.67, t);
-    const bridgeSweeper = smoothstep(0.63, 0.72, t) - smoothstep(0.82, 0.9, t);
-    return rightTurn * -0.18 + downhillLeft * 0.08 + bridgeSweeper * -0.12;
+    return this.definition.bankAt(t);
   }
 
   private liftBankedPoint(point: Vector3, points: Vector3[], index: number): Vector3 {
@@ -290,4 +410,19 @@ export class Track {
     lifted.y = Math.max(lifted.y, 0.02);
     return lifted;
   }
+}
+
+function bankTestTrackA(t: number): number {
+  const rightTurn = smoothstep(0.12, 0.26, t) - smoothstep(0.48, 0.61, t);
+  const downhillLeft = smoothstep(0.40, 0.48, t) - smoothstep(0.58, 0.67, t);
+  const bridgeSweeper = smoothstep(0.63, 0.72, t) - smoothstep(0.82, 0.9, t);
+  return rightTurn * -0.18 + downhillLeft * 0.08 + bridgeSweeper * -0.12;
+}
+
+function bankTestTrackB(t: number): number {
+  const opener = smoothstep(0.05, 0.11, t) - smoothstep(0.16, 0.24, t);
+  const ridgeSweeper = smoothstep(0.24, 0.32, t) - smoothstep(0.40, 0.48, t);
+  const returnClimb = smoothstep(0.50, 0.58, t) - smoothstep(0.64, 0.72, t);
+  const finalBend = smoothstep(0.74, 0.82, t) - smoothstep(0.90, 0.97, t);
+  return opener * 0.08 + ridgeSweeper * -0.14 + returnClimb * 0.12 + finalBend * -0.1;
 }

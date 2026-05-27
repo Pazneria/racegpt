@@ -22,12 +22,31 @@ import {
   Vector3,
   WebGLRenderer
 } from "three";
-import { damp, shortestAngleDelta } from "../core/math";
+import { damp, formatTime, shortestAngleDelta } from "../core/math";
 import type { Car, CarTelemetry } from "../game/Car";
 import type { GhostSample } from "../game/Storage";
 import type { Track, TrackSample } from "../game/Track";
 
 const CLEAR_COLOR = new Color(0xdfe5ea);
+const WORLD_UP = new Vector3(0, 1, 0);
+
+export interface SceneGhost {
+  id: string;
+  name: string;
+  sample: GhostSample;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  name: string;
+  timeMs: number;
+}
+
+interface GhostLabel {
+  id: string;
+  name: string;
+  position: Vector3;
+}
 
 export class SceneRenderer {
   readonly scene = new Scene();
@@ -35,7 +54,9 @@ export class SceneRenderer {
   readonly renderer: WebGLRenderer;
 
   private readonly carGroup: Group;
-  private readonly ghostGroup: Group;
+  private readonly ghostGroups = new Map<string, Group>();
+  private readonly ghostNameplates = new Map<string, HTMLElement>();
+  private readonly ghostNameplateLayer: HTMLElement;
   private readonly cameraTarget = new Vector3();
   private readonly cameraPosition = new Vector3(0, 7, -14);
   private readonly wheelMeshes: Mesh[] = [];
@@ -52,7 +73,11 @@ export class SceneRenderer {
   private visualYaw: number | null = null;
   private skidAccumulator = 0;
 
-  constructor(canvas: HTMLCanvasElement, private readonly track: Track) {
+  constructor(
+    canvas: HTMLCanvasElement,
+    private readonly track: Track,
+    private readonly leaderboardEntries: LeaderboardEntry[] = []
+  ) {
     this.renderer = new WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
     this.renderer.outputColorSpace = SRGBColorSpace;
     this.renderer.setClearColor(CLEAR_COLOR, 1);
@@ -62,15 +87,14 @@ export class SceneRenderer {
     this.addLighting();
     this.addWorld();
     this.carGroup = this.createCarModel(false);
-    this.ghostGroup = this.createCarModel(true);
-    this.ghostGroup.visible = false;
-    this.scene.add(this.carGroup, this.ghostGroup);
+    this.ghostNameplateLayer = getHTMLElement("ghost-nameplates");
+    this.scene.add(this.carGroup);
 
     this.resize();
     window.addEventListener("resize", () => this.resize());
   }
 
-  update(car: Car, telemetry: CarTelemetry, ghostSample: GhostSample | null, dt: number): void {
+  update(car: Car, telemetry: CarTelemetry, ghosts: SceneGhost[], dt: number): void {
     const contact = car.getContact(this.track);
     this.visualYaw ??= car.yaw;
     this.visualYaw += shortestAngleDelta(this.visualYaw, car.yaw) * (1 - Math.exp(-11.5 * dt));
@@ -78,19 +102,28 @@ export class SceneRenderer {
     this.updateCarGroup(this.carGroup, car.position, carBasis);
     this.updateFrontWheels(telemetry.steerInput);
     this.updateWheels(telemetry.speedMps, dt);
-    this.updateSkidMarks(car, telemetry, carBasis, dt);
+    this.updateSkidMarks(car, telemetry, carBasis, contact.s, dt);
 
-    if (ghostSample) {
-      const position = new Vector3(ghostSample.x, ghostSample.y, ghostSample.z);
+    const activeGhostIds = new Set<string>();
+    const ghostLabels: GhostLabel[] = [];
+    for (const ghost of ghosts) {
+      activeGhostIds.add(ghost.id);
+      const group = this.getGhostGroup(ghost.id);
+      const position = new Vector3(ghost.sample.x, ghost.sample.y, ghost.sample.z);
       const ghostContact = this.track.getClosestContact(position);
-      const basis = basisFromYaw(ghostSample.yaw, ghostContact.sample);
-      this.updateCarGroup(this.ghostGroup, position, basis);
-      this.ghostGroup.visible = true;
-    } else {
-      this.ghostGroup.visible = false;
+      const basis = basisFromYaw(ghost.sample.yaw, ghostContact.sample);
+      this.updateCarGroup(group, position, basis);
+      group.visible = true;
+      ghostLabels.push({
+        id: ghost.id,
+        name: ghost.name,
+        position: position.clone().addScaledVector(ghostContact.sample.normal, 2.95)
+      });
     }
+    this.hideInactiveGhosts(activeGhostIds);
 
     this.updateCamera(car, dt);
+    this.updateGhostNameplates(ghostLabels);
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -331,39 +364,50 @@ export class SceneRenderer {
   }
 
   private addIndustrialScenery(): void {
-    const buildingMaterial = new MeshStandardMaterial({
-      color: 0xa6adb3,
-      roughness: 0.85,
-      metalness: 0.12
-    });
-    const darkMaterial = new MeshStandardMaterial({
-      color: 0x4c5358,
-      roughness: 0.8,
-      metalness: 0.18
-    });
-
-    const hangar = new Mesh(new BoxGeometry(56, 14, 26), buildingMaterial);
-    hangar.position.set(-44, 7, 88);
-    hangar.castShadow = true;
-    hangar.receiveShadow = true;
-    this.scene.add(hangar);
-
-    const controlRoom = new Mesh(new BoxGeometry(20, 9, 18), darkMaterial);
-    controlRoom.position.set(104, 4.5, -62);
-    controlRoom.castShadow = true;
-    controlRoom.receiveShadow = true;
-    this.scene.add(controlRoom);
-
-    const boardTexture = makeTextTexture("LEADERBOARD\nCOMING SOON");
-    const board = new Mesh(
-      new PlaneGeometry(22, 8),
-      new MeshBasicMaterial({ map: boardTexture, side: DoubleSide })
-    );
-    board.position.set(116, 8.8, -88);
-    board.rotation.y = -0.35;
-    this.scene.add(board);
+    this.addLeaderboardBillboard();
 
     this.addTrainingCourseScenery();
+  }
+
+  private addLeaderboardBillboard(): void {
+    const boardWidth = 48;
+    const boardHeight = 17;
+    const boardTexture = makeLeaderboardTexture(this.leaderboardEntries, this.track.name);
+    const boardMaterial = new MeshBasicMaterial({
+      map: boardTexture,
+      side: DoubleSide
+    });
+    const board = new Mesh(new PlaneGeometry(boardWidth, boardHeight), boardMaterial);
+    board.position.set(-44, 12, 88);
+    const startFocus = this.track.startPose.position.clone();
+    startFocus.y = board.position.y;
+    board.lookAt(startFocus);
+    this.scene.add(board);
+
+    const supportMaterial = new MeshStandardMaterial({
+      color: 0x31383e,
+      roughness: 0.68,
+      metalness: 0.28
+    });
+    const rightAxis = new Vector3(1, 0, 0).applyQuaternion(board.quaternion).normalize();
+    const supportHeight = 11.8;
+    for (const sign of [-1, 1]) {
+      const support = new Mesh(new BoxGeometry(0.56, supportHeight, 0.56), supportMaterial);
+      support.position
+        .copy(board.position)
+        .addScaledVector(rightAxis, sign * (boardWidth / 2 - 2.2));
+      support.position.y = supportHeight / 2 - 0.08;
+      support.castShadow = true;
+      support.receiveShadow = true;
+      this.scene.add(support);
+    }
+
+    const baseRail = new Mesh(new BoxGeometry(boardWidth - 2.4, 0.42, 0.5), supportMaterial);
+    baseRail.quaternion.copy(board.quaternion);
+    baseRail.position.copy(board.position).setY(3.05);
+    baseRail.castShadow = true;
+    baseRail.receiveShadow = true;
+    this.scene.add(baseRail);
   }
 
   private addTrainingCourseScenery(): void {
@@ -443,45 +487,46 @@ export class SceneRenderer {
     }
   }
 
-  private createCarModel(ghost: boolean): Group {
+  private createCarModel(ghost: boolean, variant: "local" | "codex" = "local"): Group {
     const group = new Group();
+    const codexGhost = ghost && variant === "codex";
     const bodyMaterial = new MeshStandardMaterial({
-      color: ghost ? 0xa9c0cd : 0xc9d0d5,
+      color: ghost ? (codexGhost ? 0xc9bd8a : 0xa9c0cd) : 0xc9d0d5,
       roughness: 0.39,
       metalness: ghost ? 0.05 : 0.32,
       transparent: ghost,
       opacity: ghost ? 0.34 : 1
     });
     const glassMaterial = new MeshStandardMaterial({
-      color: ghost ? 0xbad3e1 : 0x1b2a35,
+      color: ghost ? (codexGhost ? 0xd7cfa7 : 0xbad3e1) : 0x1b2a35,
       roughness: 0.18,
       metalness: 0.1,
       transparent: ghost,
       opacity: ghost ? 0.22 : 1
     });
     const trimMaterial = new MeshStandardMaterial({
-      color: ghost ? 0x6f8794 : 0x252a2f,
+      color: ghost ? (codexGhost ? 0x8b815d : 0x6f8794) : 0x252a2f,
       roughness: 0.62,
       metalness: ghost ? 0.04 : 0.18,
       transparent: ghost,
       opacity: ghost ? 0.24 : 1
     });
     const tireMaterial = new MeshStandardMaterial({
-      color: ghost ? 0x6f8794 : 0x111417,
+      color: ghost ? (codexGhost ? 0x7f7555 : 0x6f8794) : 0x111417,
       roughness: 0.82,
       metalness: 0.02,
       transparent: ghost,
       opacity: ghost ? 0.26 : 1
     });
     const rimMaterial = new MeshStandardMaterial({
-      color: ghost ? 0x91a6b2 : 0xaeb5bb,
+      color: ghost ? (codexGhost ? 0xaea073 : 0x91a6b2) : 0xaeb5bb,
       roughness: 0.36,
       metalness: ghost ? 0.04 : 0.42,
       transparent: ghost,
       opacity: ghost ? 0.24 : 1
     });
     const headlightMaterial = new MeshStandardMaterial({
-      color: ghost ? 0xbad3e1 : 0xe6edf1,
+      color: ghost ? (codexGhost ? 0xd7cfa7 : 0xbad3e1) : 0xe6edf1,
       emissive: ghost ? 0x000000 : 0xcbd6df,
       emissiveIntensity: ghost ? 0 : 0.28,
       roughness: 0.22,
@@ -489,7 +534,7 @@ export class SceneRenderer {
       opacity: ghost ? 0.2 : 1
     });
     const tailLightMaterial = new MeshStandardMaterial({
-      color: ghost ? 0x9fb8c8 : 0xbd3030,
+      color: ghost ? (codexGhost ? 0xb5aa82 : 0x9fb8c8) : 0xbd3030,
       emissive: ghost ? 0x000000 : 0x8c1717,
       emissiveIntensity: ghost ? 0 : 0.22,
       roughness: 0.34,
@@ -586,6 +631,78 @@ export class SceneRenderer {
     return group;
   }
 
+  private getGhostGroup(id: string): Group {
+    const existing = this.ghostGroups.get(id);
+    if (existing) return existing;
+
+    const group = this.createCarModel(true, id === "codex" ? "codex" : "local");
+    group.visible = false;
+    this.ghostGroups.set(id, group);
+    this.scene.add(group);
+    return group;
+  }
+
+  private hideInactiveGhosts(activeIds: Set<string>): void {
+    for (const [id, group] of this.ghostGroups) {
+      if (!activeIds.has(id)) group.visible = false;
+    }
+  }
+
+  private updateGhostNameplates(labels: GhostLabel[]): void {
+    const activeIds = new Set(labels.map((label) => label.id));
+    for (const [id, element] of this.ghostNameplates) {
+      if (!activeIds.has(id)) element.classList.remove("ghost-nameplate--visible");
+    }
+
+    const canvasRect = this.renderer.domElement.getBoundingClientRect();
+    const placedLabels: Array<{ x: number; y: number }> = [];
+    for (const label of labels) {
+      const element = this.getGhostNameplate(label);
+      const projected = label.position.clone().project(this.camera);
+      const visible =
+        projected.z > -1 &&
+        projected.z < 1 &&
+        projected.x > -1.08 &&
+        projected.x < 1.08 &&
+        projected.y > -1.08 &&
+        projected.y < 1.08;
+
+      if (!visible) {
+        element.classList.remove("ghost-nameplate--visible");
+        continue;
+      }
+
+      const x = canvasRect.left + (projected.x * 0.5 + 0.5) * canvasRect.width;
+      let y = canvasRect.top + (-projected.y * 0.5 + 0.5) * canvasRect.height;
+      while (
+        placedLabels.some(
+          (placed) => Math.abs(placed.x - x) < 78 && Math.abs(placed.y - y) < 26
+        )
+      ) {
+        y -= 26;
+      }
+      placedLabels.push({ x, y });
+      element.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -100%)`;
+      element.classList.add("ghost-nameplate--visible");
+    }
+  }
+
+  private getGhostNameplate(label: GhostLabel): HTMLElement {
+    const existing = this.ghostNameplates.get(label.id);
+    if (existing) {
+      if (existing.textContent !== label.name) existing.textContent = label.name;
+      return existing;
+    }
+
+    const element = document.createElement("div");
+    element.className = "ghost-nameplate";
+    if (label.id === "codex") element.classList.add("ghost-nameplate--codex");
+    element.textContent = label.name;
+    this.ghostNameplateLayer.appendChild(element);
+    this.ghostNameplates.set(label.id, element);
+    return element;
+  }
+
   private updateCarGroup(
     group: Group,
     position: Vector3,
@@ -614,6 +731,7 @@ export class SceneRenderer {
     car: Car,
     telemetry: CarTelemetry,
     basis: { forward: Vector3; right: Vector3; up: Vector3 },
+    contactS: number,
     dt: number
   ): void {
     this.skidAccumulator += dt;
@@ -637,7 +755,7 @@ export class SceneRenderer {
         .clone()
         .addScaledVector(basis.forward, rearOffset)
         .addScaledVector(basis.right, sideOffset);
-      const contact = this.track.getClosestContact(wheelPoint);
+      const contact = this.track.getClosestContact(wheelPoint, contactS);
       return contact.surfacePoint.addScaledVector(contact.sample.normal, 0.035);
     });
 
@@ -661,20 +779,21 @@ export class SceneRenderer {
   }
 
   private updateCamera(car: Car, dt: number): void {
-    const contact = car.getContact(this.track);
     const forward = car.getForward();
     const velocity = car.velocity.clone();
     const travelDir = velocity.lengthSq() > 4 ? velocity.normalize() : forward;
-    travelDir.addScaledVector(contact.sample.normal, -travelDir.dot(contact.sample.normal)).normalize();
+    travelDir.setY(0);
+    if (travelDir.lengthSq() < 0.001) travelDir.copy(forward).setY(0);
+    travelDir.normalize();
 
     const desiredPosition = car.position
       .clone()
       .addScaledVector(travelDir, -14.4)
-      .addScaledVector(contact.sample.normal, 5.3);
+      .addScaledVector(WORLD_UP, 5.3);
     const desiredTarget = car.position
       .clone()
       .addScaledVector(travelDir, 8.2)
-      .addScaledVector(contact.sample.normal, 1.35);
+      .addScaledVector(WORLD_UP, 1.35);
 
     const positionAlpha = 1 - Math.exp(-5.8 * dt);
     const targetAlpha = 1 - Math.exp(-8.2 * dt);
@@ -751,6 +870,12 @@ function basisFromYaw(yaw: number, sample: TrackSample): { forward: Vector3; rig
   return { forward, right, up };
 }
 
+function getHTMLElement(id: string): HTMLElement {
+  const element = document.getElementById(id);
+  if (!element) throw new Error(`Missing #${id}`);
+  return element;
+}
+
 function makeTextTexture(text: string): CanvasTexture {
   const canvas = document.createElement("canvas");
   canvas.width = 1024;
@@ -770,6 +895,68 @@ function makeTextTexture(text: string): CanvasTexture {
   const lines = text.split("\n");
   lines.forEach((line, index) => {
     context.fillText(line, canvas.width / 2, canvas.height / 2 - 58 + index * 112);
+  });
+
+  const texture = new CanvasTexture(canvas);
+  texture.colorSpace = SRGBColorSpace;
+  texture.minFilter = LinearFilter;
+  texture.magFilter = LinearFilter;
+  return texture;
+}
+
+function makeLeaderboardTexture(entries: LeaderboardEntry[], trackName: string): CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = 2048;
+  canvas.height = 1024;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Canvas 2D context unavailable");
+
+  context.fillStyle = "#11171c";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.strokeStyle = "#cfd7de";
+  context.lineWidth = 16;
+  context.strokeRect(30, 30, canvas.width - 60, canvas.height - 60);
+
+  context.fillStyle = "#f5c542";
+  context.font = "900 118px Arial";
+  context.textAlign = "left";
+  context.textBaseline = "alphabetic";
+  context.fillText("MODEL BENCHMARKS", 110, 175);
+
+  context.fillStyle = "#9eabb4";
+  context.font = "700 46px Arial";
+  context.fillText(trackName.toUpperCase(), 114, 245);
+
+  context.strokeStyle = "rgba(245, 197, 66, 0.72)";
+  context.lineWidth = 6;
+  context.beginPath();
+  context.moveTo(110, 300);
+  context.lineTo(canvas.width - 110, 300);
+  context.stroke();
+
+  const rows = entries.length > 0 ? entries.slice(0, 5) : [];
+  if (rows.length === 0) {
+    context.fillStyle = "#edf3f6";
+    context.font = "800 86px Arial";
+    context.fillText("COMING SOON", 114, 540);
+  }
+
+  rows.forEach((entry, index) => {
+    const y = 468 + index * 122;
+    const time = formatTime(Math.round(entry.timeMs));
+
+    context.fillStyle = index === 0 ? "rgba(245, 197, 66, 0.14)" : "rgba(255, 255, 255, 0.06)";
+    context.fillRect(102, y - 78, canvas.width - 204, 102);
+
+    context.fillStyle = index === 0 ? "#f5c542" : "#edf3f6";
+    context.font = "900 82px Arial";
+    context.textAlign = "left";
+    context.fillText(String(entry.rank), 145, y);
+    context.fillText(entry.name.toUpperCase(), 285, y);
+
+    context.textAlign = "right";
+    context.font = "900 88px Arial";
+    context.fillText(time, canvas.width - 145, y);
   });
 
   const texture = new CanvasTexture(canvas);
