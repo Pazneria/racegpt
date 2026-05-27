@@ -85,7 +85,7 @@ export class InputManager {
 
     return {
       connected: true,
-      steer: Math.abs(pad.axes[0] ?? 0) < 0.08 ? 0 : pad.axes[0] ?? 0,
+      steer: Math.abs(pad.axes[0] ?? 0) < 0.08 ? 0 : -(pad.axes[0] ?? 0),
       throttle: pad.buttons[7]?.value ?? 0,
       brake: pad.buttons[6]?.value ?? 0,
       buttonsPressed
@@ -116,4 +116,3 @@ export class InputManager {
     ].includes(key);
   }
 }
-
