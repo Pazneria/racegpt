@@ -597,7 +597,7 @@ export class SceneRenderer {
   }
 
   private updateFrontWheels(steerInput: number): void {
-    const angle = -steerInput * 0.48;
+    const angle = steerInput * 0.48;
     for (const group of this.frontWheelGroups) {
       group.rotation.y = damp(group.rotation.y, angle, 18, 1 / 60);
     }
