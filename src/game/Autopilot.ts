@@ -10,28 +10,33 @@ export function getAutopilotInput(
   telemetry: CarTelemetry
 ): InputSnapshot {
   const contact = car.getContact(track);
-  const lookAhead = clamp(12 + telemetry.speedMps * 0.85, 14, 42);
+  const lookAhead = clamp(11.779 + telemetry.speedMps * 4.198, 14, 77.308);
   const target = track.getSampleAtS(contact.s + lookAhead);
-  const desiredYaw = Math.atan2(target.tangent.x, target.tangent.z);
+  const curveTarget = track.getSampleAtS(contact.s + 190.071);
+  const currentYaw = Math.atan2(contact.sample.tangent.x, contact.sample.tangent.z);
+  const curveYaw = Math.atan2(curveTarget.tangent.x, curveTarget.tangent.z);
+  const turnSign = Math.sign(shortestAngleDelta(currentYaw, curveYaw));
+  const targetLateral = -1.694 * turnSign;
+  const toTarget = target.center
+    .clone()
+    .addScaledVector(target.side, targetLateral)
+    .sub(car.position);
+  const desiredYaw = Math.atan2(toTarget.x, toTarget.z);
   const headingError = shortestAngleDelta(car.yaw, desiredYaw);
-  const lateralCorrection = clamp(-contact.lateral / 6.8, -0.72, 0.72);
-  const steer = clamp(headingError * 1.72 + lateralCorrection, -1, 1);
-  const curvePressure = Math.abs(headingError) + Math.abs(contact.lateral) * 0.035;
-  const targetSpeed = curvePressure > 0.56 ? 15 : curvePressure > 0.32 ? 20 : 29;
-  const brake =
-    telemetry.speedMps > targetSpeed
-      ? clamp((telemetry.speedMps - targetSpeed) / 6.5, 0, 0.7)
-      : 0;
+  const steer = clamp(
+    headingError * 4.607 + (targetLateral - contact.lateral) * 0.0382 - turnSign * 0.1757,
+    -1,
+    1
+  );
 
   return {
     ...base,
     steer,
-    throttle: brake > 0.2 ? 0.18 : 1,
-    brake,
+    throttle: 1,
+    brake: 0,
     checkpointResetPressed: false,
     fullRestartPressed: false,
     pausePressed: false,
     confirmPressed: false
   };
 }
-

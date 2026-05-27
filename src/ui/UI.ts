@@ -36,6 +36,9 @@ export class UI {
   private readonly gearValue: HTMLElement;
   private readonly speedometerDial: HTMLElement;
   private readonly countdown: HTMLElement;
+  private readonly showcaseBanner: HTMLElement;
+  private readonly showcaseTitle: HTMLElement;
+  private readonly showcaseCopy: HTMLElement;
   private readonly finishTime: HTMLElement;
   private readonly finishCopy: HTMLElement;
   private readonly volumeSlider: HTMLInputElement;
@@ -57,6 +60,9 @@ export class UI {
     this.gearValue = getElement("gear-value");
     this.speedometerDial = getElement("speedometer-dial");
     this.countdown = getElement("countdown");
+    this.showcaseBanner = getElement("showcase-banner");
+    this.showcaseTitle = getElement("showcase-title");
+    this.showcaseCopy = getElement("showcase-copy");
     this.finishTime = getElement("finish-time");
     this.finishCopy = getElement("finish-copy");
     this.volumeSlider = getInput("volume-slider");
@@ -129,6 +135,17 @@ export class UI {
     this.countdown.textContent = value;
     this.countdown.classList.add("countdown--visible");
     this.countdown.setAttribute("aria-hidden", "false");
+  }
+
+  showShowcaseBanner(title: string, copy: string, durationMs = 4200): void {
+    this.showcaseTitle.textContent = title;
+    this.showcaseCopy.textContent = copy;
+    this.showcaseBanner.classList.add("showcase-banner--visible");
+    this.showcaseBanner.setAttribute("aria-hidden", "false");
+    window.setTimeout(() => {
+      this.showcaseBanner.classList.remove("showcase-banner--visible");
+      this.showcaseBanner.setAttribute("aria-hidden", "true");
+    }, durationMs);
   }
 
   private setHudVisible(visible: boolean): void {

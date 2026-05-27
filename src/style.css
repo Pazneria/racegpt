@@ -371,6 +371,43 @@ input[type="checkbox"] {
   display: flex;
 }
 
+.showcase-banner {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: none;
+  place-items: center;
+  pointer-events: none;
+  background: rgba(8, 11, 14, 0.28);
+}
+
+.showcase-banner--visible {
+  display: grid;
+}
+
+.showcase-banner strong,
+.showcase-banner span {
+  display: block;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.showcase-banner strong {
+  color: #f5c542;
+  font-size: clamp(4rem, 10vw, 7.5rem);
+  font-weight: 900;
+  letter-spacing: 0;
+  text-shadow: 0 14px 48px rgba(0, 0, 0, 0.58);
+}
+
+.showcase-banner span {
+  margin-top: 18px;
+  color: #f4f7f9;
+  font-size: clamp(1rem, 2vw, 1.65rem);
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
 @media (max-width: 780px) {
   .timing-stack {
     right: 18px;

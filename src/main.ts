@@ -88,6 +88,7 @@ class ChromeDriftApp {
 
     this.audio.setVolume(this.muted ? 0 : this.settings.volume);
     this.ui.syncSettings(this.settings);
+    this.configureShowcaseBanner();
     this.car.resetTo(this.track.startPose, 0);
     this.lastTrackS = this.track.startS;
     this.ui.showMenu();
@@ -180,6 +181,15 @@ class ChromeDriftApp {
   private updateGhostEnabled(ghostEnabled: boolean): void {
     this.settings = { ...this.settings, ghostEnabled };
     saveSettings(this.settings);
+  }
+
+  private configureShowcaseBanner(): void {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("showcase") !== "1") return;
+    this.ui.showShowcaseBanner(
+      params.get("showcaseTitle") ?? "FUCK YEAH",
+      params.get("showcaseCopy") ?? "Clean autopilot candidate"
+    );
   }
 
   private returnToArcade(): void {
