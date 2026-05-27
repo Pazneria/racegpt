@@ -41,6 +41,7 @@ export interface TrackPose {
 
 const UP = new Vector3(0, 1, 0);
 const SAMPLE_COUNT = 640;
+const BANK_EDGE_CLEARANCE = 0.18;
 
 export class Track {
   readonly id = "banked-shakedown";
@@ -203,33 +204,36 @@ export class Track {
     const curve = new CatmullRomCurve3(
       [
         new Vector3(0, 0, 0),
-        new Vector3(0, 0, 70),
-        new Vector3(18, 2, 105),
-        new Vector3(62, 8, 135),
-        new Vector3(115, 12, 128),
-        new Vector3(160, 12, 98),
-        new Vector3(195, 9, 70),
-        new Vector3(200, 6, 25),
-        new Vector3(185, 3, -20),
-        new Vector3(160, 1, -58),
-        new Vector3(160, 0, -150),
-        new Vector3(185, 0, -230),
-        new Vector3(240, 4, -280),
-        new Vector3(305, 10, -265),
-        new Vector3(350, 13, -210),
-        new Vector3(372, 13, -142),
-        new Vector3(360, 10, -80),
-        new Vector3(410, 6, -30),
-        new Vector3(455, 2, 45),
-        new Vector3(455, 0, 130),
-        new Vector3(425, 0, 205)
+        new Vector3(0, 0, 82),
+        new Vector3(24, 2, 126),
+        new Vector3(78, 8, 158),
+        new Vector3(138, 12, 148),
+        new Vector3(188, 12, 112),
+        new Vector3(225, 9, 70),
+        new Vector3(228, 6, 18),
+        new Vector3(205, 3, -33),
+        new Vector3(168, 1, -76),
+        new Vector3(160, 0, -176),
+        new Vector3(190, 0, -262),
+        new Vector3(256, 4, -318),
+        new Vector3(332, 10, -300),
+        new Vector3(386, 13, -236),
+        new Vector3(412, 13, -160),
+        new Vector3(398, 10, -88),
+        new Vector3(448, 6, -28),
+        new Vector3(498, 2, 58),
+        new Vector3(500, 0, 154),
+        new Vector3(462, 0, 244)
       ],
       false,
       "catmullrom",
       0.35
     );
 
-    const points = curve.getSpacedPoints(SAMPLE_COUNT - 1);
+    const rawPoints = curve.getSpacedPoints(SAMPLE_COUNT - 1);
+    const points = rawPoints.map((point, index) =>
+      this.liftBankedPoint(point, rawPoints, index)
+    );
     let runningS = 0;
 
     return points.map((point, index) => {
@@ -265,5 +269,25 @@ export class Track {
     const downhillLeft = smoothstep(0.40, 0.48, t) - smoothstep(0.58, 0.67, t);
     const bridgeSweeper = smoothstep(0.63, 0.72, t) - smoothstep(0.82, 0.9, t);
     return rightTurn * -0.18 + downhillLeft * 0.08 + bridgeSweeper * -0.12;
+  }
+
+  private liftBankedPoint(point: Vector3, points: Vector3[], index: number): Vector3 {
+    const lifted = point.clone();
+    const previous = points[Math.max(0, index - 1)];
+    const next = points[Math.min(points.length - 1, index + 1)];
+    const tangent = next.clone().sub(previous).normalize();
+    const flatTangent = new Vector3(tangent.x, 0, tangent.z).normalize();
+    const baseSide = new Vector3().crossVectors(UP, flatTangent).normalize();
+    const t = index / (points.length - 1);
+    const bank = this.bankAt(t);
+    const side = baseSide
+      .applyQuaternion(new Quaternion().setFromAxisAngle(tangent, bank))
+      .normalize();
+    const leftY = point.y - side.y * (this.roadWidth / 2);
+    const rightY = point.y + side.y * (this.roadWidth / 2);
+    const bankLift = Math.max(0, BANK_EDGE_CLEARANCE - Math.min(leftY, rightY));
+    lifted.y += bankLift * smoothstep(0.02, 0.12, Math.abs(bank));
+    lifted.y = Math.max(lifted.y, 0.02);
+    return lifted;
   }
 }
