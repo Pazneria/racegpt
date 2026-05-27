@@ -19,7 +19,7 @@ export interface GhostRecording {
 }
 
 const SETTINGS_KEY = "chrome-drift:settings";
-const BEST_RUN_KEY = "chrome-drift:best-run:banked-shakedown";
+const BEST_RUN_KEY = "chrome-drift:best-run:banked-shakedown:v2";
 
 const DEFAULT_SETTINGS: GameSettings = {
   volume: 0.65,
@@ -64,4 +64,3 @@ export function loadBestRun(): GhostRecording | null {
 export function saveBestRun(recording: GhostRecording): void {
   localStorage.setItem(BEST_RUN_KEY, JSON.stringify(recording));
 }
-

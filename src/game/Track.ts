@@ -40,7 +40,7 @@ export interface TrackPose {
 }
 
 const UP = new Vector3(0, 1, 0);
-const SAMPLE_COUNT = 360;
+const SAMPLE_COUNT = 640;
 
 export class Track {
   readonly id = "banked-shakedown";
@@ -63,7 +63,6 @@ export class Track {
 
   get startPose(): TrackPose {
     const pose = this.getPoseAtS(this.startS);
-    pose.position.addScaledVector(pose.sample.normal, 0.62);
     return pose;
   }
 
@@ -210,7 +209,17 @@ export class Track {
         new Vector3(200, 6, 25),
         new Vector3(185, 3, -20),
         new Vector3(160, 1, -58),
-        new Vector3(160, 0, -150)
+        new Vector3(160, 0, -150),
+        new Vector3(185, 0, -230),
+        new Vector3(240, 4, -280),
+        new Vector3(305, 10, -265),
+        new Vector3(350, 13, -210),
+        new Vector3(372, 13, -142),
+        new Vector3(360, 10, -80),
+        new Vector3(410, 6, -30),
+        new Vector3(455, 2, 45),
+        new Vector3(455, 0, 130),
+        new Vector3(425, 0, 205)
       ],
       false,
       "catmullrom",
@@ -250,7 +259,8 @@ export class Track {
 
   private bankAt(t: number): number {
     const rightTurn = smoothstep(0.12, 0.26, t) - smoothstep(0.48, 0.61, t);
-    const downhillLeft = smoothstep(0.58, 0.68, t) - smoothstep(0.78, 0.88, t);
-    return rightTurn * -0.18 + downhillLeft * 0.08;
+    const downhillLeft = smoothstep(0.40, 0.48, t) - smoothstep(0.58, 0.67, t);
+    const bridgeSweeper = smoothstep(0.63, 0.72, t) - smoothstep(0.82, 0.9, t);
+    return rightTurn * -0.18 + downhillLeft * 0.08 + bridgeSweeper * -0.12;
   }
 }

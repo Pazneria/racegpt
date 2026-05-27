@@ -351,7 +351,6 @@ class ChromeDriftApp {
 
     if (doublePress && this.passedCheckpoint) {
       const pose = this.track.getPoseAtS(this.track.checkpointS + 2.5);
-      pose.position.addScaledVector(pose.sample.normal, 0.62);
       this.car.resetTo(pose, this.runTimeMs);
     } else if (this.checkpointRestore) {
       this.car.applySnapshot(cloneSnapshot(this.checkpointRestore));

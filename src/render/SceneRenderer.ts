@@ -90,21 +90,21 @@ export class SceneRenderer {
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
     sun.shadow.camera.near = 10;
-    sun.shadow.camera.far = 420;
-    sun.shadow.camera.left = -180;
-    sun.shadow.camera.right = 180;
-    sun.shadow.camera.top = 180;
-    sun.shadow.camera.bottom = -180;
+    sun.shadow.camera.far = 720;
+    sun.shadow.camera.left = -420;
+    sun.shadow.camera.right = 520;
+    sun.shadow.camera.top = 420;
+    sun.shadow.camera.bottom = -520;
     this.scene.add(sun);
   }
 
   private addWorld(): void {
     const ground = new Mesh(
-      new PlaneGeometry(720, 720, 1, 1),
+      new PlaneGeometry(1100, 1100, 1, 1),
       new MeshStandardMaterial({ color: 0x51614d, roughness: 0.95, metalness: 0 })
     );
     ground.rotation.x = -Math.PI / 2;
-    ground.position.set(75, -0.08, -10);
+    ground.position.set(190, -0.08, -30);
     ground.receiveShadow = true;
     this.scene.add(ground);
 
@@ -113,8 +113,63 @@ export class SceneRenderer {
     this.scene.add(this.track.createPaintedLine(this.track.checkpointS, 0xf5c542, 3.6));
     this.scene.add(this.track.createPaintedLine(this.track.finishS, 0xf3f5f7, 3.2));
 
+    this.addBridgeStructure();
     this.addBarriers();
     this.addIndustrialScenery();
+  }
+
+  private addBridgeStructure(): void {
+    const deckMaterial = new MeshStandardMaterial({
+      color: 0x68727a,
+      roughness: 0.82,
+      metalness: 0.08
+    });
+    const columnMaterial = new MeshStandardMaterial({
+      color: 0x9aa1a7,
+      roughness: 0.74,
+      metalness: 0.06
+    });
+    const deckGeometry = new BoxGeometry(this.track.roadWidth + 4.2, 0.42, 7.2);
+    const crossBeamGeometry = new BoxGeometry(this.track.roadWidth + 6.5, 0.5, 1.1);
+    const groundY = -0.08;
+
+    for (let index = 8; index < this.track.samples.length - 8; index += 8) {
+      const sample = this.track.samples[index];
+      if (sample.center.y < 1.3) continue;
+
+      const deck = new Mesh(deckGeometry, deckMaterial);
+      const basis = new Matrix4().makeBasis(sample.side, sample.normal, sample.tangent);
+      deck.quaternion.setFromRotationMatrix(basis);
+      deck.position.copy(sample.center).addScaledVector(sample.normal, -0.36);
+      deck.castShadow = true;
+      deck.receiveShadow = true;
+      this.scene.add(deck);
+    }
+
+    for (let index = 20; index < this.track.samples.length - 20; index += 28) {
+      const sample = this.track.samples[index];
+      if (sample.center.y < 2.3) continue;
+
+      const beam = new Mesh(crossBeamGeometry, columnMaterial);
+      const basis = new Matrix4().makeBasis(sample.side, sample.normal, sample.tangent);
+      beam.quaternion.setFromRotationMatrix(basis);
+      beam.position.copy(sample.center).addScaledVector(sample.normal, -0.82);
+      beam.castShadow = true;
+      beam.receiveShadow = true;
+      this.scene.add(beam);
+
+      for (const sign of [-1, 1]) {
+        const height = Math.max(1.2, sample.center.y - groundY - 0.65);
+        const column = new Mesh(new CylinderGeometry(0.38, 0.48, height, 10), columnMaterial);
+        const anchor = sample.center
+          .clone()
+          .addScaledVector(sample.side, sign * (this.track.roadWidth / 2 - 1.4));
+        column.position.set(anchor.x, groundY + height / 2, anchor.z);
+        column.castShadow = true;
+        column.receiveShadow = true;
+        this.scene.add(column);
+      }
+    }
   }
 
   private addBarriers(): void {
@@ -175,17 +230,27 @@ export class SceneRenderer {
     board.rotation.y = -0.35;
     this.scene.add(board);
 
-    const poleMaterial = new MeshStandardMaterial({ color: 0x596169, roughness: 0.52, metalness: 0.35 });
-    const poleGeometry = new CylinderGeometry(0.28, 0.34, 16, 10);
-    for (const sampleIndex of [28, 76, 126, 188, 248, 310]) {
+    const poleMaterial = new MeshStandardMaterial({
+      color: 0x596169,
+      roughness: 0.52,
+      metalness: 0.35
+    });
+    const poleSampleIndexes = [28, 76, 126, 188, 248, 310, 396, 486, 570];
+    const groundY = -0.08;
+    for (const sampleIndex of poleSampleIndexes) {
       const sample = this.track.samples[sampleIndex];
       for (const sign of [-1, 1]) {
-        const pole = new Mesh(poleGeometry, poleMaterial);
+        const poleTopY = sample.center.y + 16;
+        const poleHeight = poleTopY - groundY;
+        const pole = new Mesh(new CylinderGeometry(0.28, 0.34, poleHeight, 10), poleMaterial);
+        const anchor = sample.center
+          .clone()
+          .addScaledVector(sample.side, sign * (this.track.barrierOffset + 5));
         pole.position
-          .copy(sample.center)
-          .addScaledVector(sample.side, sign * (this.track.barrierOffset + 5))
-          .add(new Vector3(0, 8, 0));
+          .copy(anchor)
+          .setY(groundY + poleHeight / 2);
         pole.castShadow = true;
+        pole.receiveShadow = true;
         this.scene.add(pole);
       }
     }
@@ -329,4 +394,3 @@ function makeTextTexture(text: string): CanvasTexture {
   texture.magFilter = LinearFilter;
   return texture;
 }
-

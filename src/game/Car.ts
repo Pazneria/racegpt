@@ -21,6 +21,7 @@ export interface CarTelemetry {
 }
 
 const WORLD_UP = new Vector3(0, 1, 0);
+const RIDE_HEIGHT = 0.08;
 
 export class Car {
   readonly position = new Vector3();
@@ -31,7 +32,7 @@ export class Car {
 
   resetTo(pose: TrackPose, timeMs = 0): CarSnapshot {
     this.position.copy(pose.position);
-    this.position.addScaledVector(pose.sample.normal, 0.62);
+    this.position.addScaledVector(pose.sample.normal, RIDE_HEIGHT);
     this.velocity.set(0, 0, 0);
     this.yaw = pose.yaw;
     this.driftBlend = 0;
@@ -126,7 +127,7 @@ export class Car {
     const contactAfter = track.getClosestContact(this.position);
     const barrierHit = this.resolveBarrier(track, contactAfter, dt);
     const grounded = track.getClosestContact(this.position);
-    this.position.y = grounded.surfacePoint.y + grounded.sample.normal.y * 0.62;
+    this.position.y = grounded.surfacePoint.y + grounded.sample.normal.y * RIDE_HEIGHT;
     this.lastContact = grounded;
 
     const newSpeed = this.velocity.length();
