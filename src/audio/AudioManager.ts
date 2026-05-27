@@ -8,6 +8,7 @@ export class AudioManager {
   private engineGain: GainNode | null = null;
   private tireGain: GainNode | null = null;
   private volume = 0.65;
+  private lastGear = 1;
 
   setVolume(volume: number): void {
     this.volume = Math.max(0, Math.min(1, volume));
@@ -27,9 +28,15 @@ export class AudioManager {
   update(telemetry: CarTelemetry, active: boolean): void {
     if (!this.context || !this.engineOsc || !this.engineGain || !this.tireGain) return;
     const now = this.context.currentTime;
-    const speedFactor = Math.min(1, telemetry.speedMps / 58);
-    const frequency = 54 + speedFactor * 92 + telemetry.engineLoad * 54;
-    const engineLevel = active ? 0.055 + telemetry.engineLoad * 0.075 : 0.025;
+    if (active && telemetry.gear !== this.lastGear) {
+      this.shiftCue(telemetry.gear);
+    }
+    this.lastGear = telemetry.gear;
+
+    const rpm = Math.max(0, Math.min(1.08, telemetry.rpmNormalized));
+    const shiftDip = telemetry.shiftPulse * 16;
+    const frequency = 48 + rpm * 178 + telemetry.engineLoad * 24 - shiftDip;
+    const engineLevel = active ? 0.048 + telemetry.engineLoad * 0.072 : 0.022;
     const tireLevel = active ? Math.max(telemetry.slipAmount, telemetry.driftAmount * 0.75) * 0.07 : 0;
 
     this.engineOsc.frequency.setTargetAtTime(frequency, now, 0.035);
@@ -62,6 +69,10 @@ export class AudioManager {
 
   barrier(): void {
     this.tone(120, 0.045, 0.08, "sawtooth");
+  }
+
+  private shiftCue(gear: number): void {
+    this.tone(170 + gear * 18, 0.035, 0.024, "triangle");
   }
 
   private ensureGraph(): void {

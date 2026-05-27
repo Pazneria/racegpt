@@ -45,7 +45,10 @@ class ChromeDriftApp {
     onRoad: true,
     barrierHit: false,
     engineLoad: 0,
-    steerInput: 0
+    steerInput: 0,
+    gear: 1,
+    rpmNormalized: 0.24,
+    shiftPulse: 0
   };
 
   private lastFrame = performance.now();
@@ -448,6 +451,8 @@ class ChromeDriftApp {
       bestMs: this.bestRun?.timeMs ?? null,
       splitMs: this.checkpointMs,
       speedKmh: this.telemetry.speedKmh,
+      gear: this.telemetry.gear,
+      shiftPulse: this.telemetry.shiftPulse,
       status,
       hudVisible: this.mode !== "menu" && this.mode !== "settings"
     });
@@ -493,6 +498,9 @@ class ChromeDriftApp {
       checkpointS: this.track.checkpointS,
       finishS: this.track.finishS,
       speedKmh: this.telemetry.speedKmh,
+      gear: this.telemetry.gear,
+      rpmNormalized: this.telemetry.rpmNormalized,
+      shiftPulse: this.telemetry.shiftPulse,
       x: this.car.position.x,
       y: this.car.position.y,
       z: this.car.position.z,
@@ -511,7 +519,9 @@ function cloneSnapshot(snapshot: CarSnapshot): CarSnapshot {
     position: snapshot.position.clone(),
     velocity: snapshot.velocity.clone(),
     yaw: snapshot.yaw,
-    timeMs: snapshot.timeMs
+    timeMs: snapshot.timeMs,
+    gear: snapshot.gear,
+    rpmNormalized: snapshot.rpmNormalized
   };
 }
 
@@ -528,6 +538,9 @@ declare global {
       checkpointS: number;
       finishS: number;
       speedKmh: number;
+      gear: number;
+      rpmNormalized: number;
+      shiftPulse: number;
       x: number;
       y: number;
       z: number;

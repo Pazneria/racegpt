@@ -6,6 +6,8 @@ export interface HudState {
   bestMs: number | null;
   splitMs: number | null;
   speedKmh: number;
+  gear: number;
+  shiftPulse: number;
   status: string;
   hudVisible: boolean;
 }
@@ -32,6 +34,8 @@ export class UI {
   private readonly splitTime: HTMLElement;
   private readonly speedValue: HTMLElement;
   private readonly speedNeedle: HTMLElement;
+  private readonly gearValue: HTMLElement;
+  private readonly speedometerDial: HTMLElement;
   private readonly statusChip: HTMLElement;
   private readonly countdown: HTMLElement;
   private readonly finishTime: HTMLElement;
@@ -52,6 +56,8 @@ export class UI {
     this.splitTime = getElement("split-time");
     this.speedValue = getElement("speed-value");
     this.speedNeedle = getElement("speed-needle");
+    this.gearValue = getElement("gear-value");
+    this.speedometerDial = getElement("speedometer-dial");
     this.statusChip = getElement("status-chip");
     this.countdown = getElement("countdown");
     this.finishTime = getElement("finish-time");
@@ -108,9 +114,11 @@ export class UI {
     this.bestTime.textContent = formatTime(state.bestMs);
     this.splitTime.textContent = formatTime(state.splitMs);
     const speed = Math.round(state.speedKmh);
-    const angle = -132 + Math.min(1, speed / 240) * 264;
+    const angle = -132 + Math.min(1, speed / 500) * 264;
     this.speedValue.textContent = String(speed);
+    this.gearValue.textContent = String(state.gear);
     this.speedNeedle.style.transform = `translate(-50%, -100%) rotate(${angle}deg)`;
+    this.speedometerDial.classList.toggle("speedometer__dial--shift", state.shiftPulse > 0.15);
     this.statusChip.textContent = state.status;
     this.setHudVisible(state.hudVisible);
   }

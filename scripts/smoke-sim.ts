@@ -12,7 +12,11 @@ let telemetry: CarTelemetry = {
   slipAmount: 0,
   onRoad: true,
   barrierHit: false,
-  engineLoad: 0
+  engineLoad: 0,
+  steerInput: 0,
+  gear: 1,
+  rpmNormalized: 0.24,
+  shiftPulse: 0
 };
 
 const neutralInput: InputSnapshot = {
@@ -83,4 +87,3 @@ console.error(
   )
 );
 process.exit(1);
-
