@@ -27,8 +27,8 @@ export class AudioManager {
   update(telemetry: CarTelemetry, active: boolean): void {
     if (!this.context || !this.engineOsc || !this.engineGain || !this.tireGain) return;
     const now = this.context.currentTime;
-    const speedFactor = Math.min(1, telemetry.speedMps / 38);
-    const frequency = 68 + speedFactor * 105 + telemetry.engineLoad * 72;
+    const speedFactor = Math.min(1, telemetry.speedMps / 48);
+    const frequency = 54 + speedFactor * 92 + telemetry.engineLoad * 54;
     const engineLevel = active ? 0.055 + telemetry.engineLoad * 0.075 : 0.025;
     const tireLevel = active ? Math.max(telemetry.slipAmount, telemetry.driftAmount * 0.75) * 0.07 : 0;
 
@@ -50,8 +50,8 @@ export class AudioManager {
   }
 
   checkpoint(): void {
-    this.tone(720, 0.11, 0.08, "triangle");
-    window.setTimeout(() => this.tone(960, 0.08, 0.055, "triangle"), 70);
+    this.tone(640, 0.075, 0.035, "triangle");
+    window.setTimeout(() => this.tone(820, 0.055, 0.024, "triangle"), 64);
   }
 
   finish(): void {
@@ -78,7 +78,7 @@ export class AudioManager {
     this.engineGain.gain.value = 0;
     const engineFilter = this.context.createBiquadFilter();
     engineFilter.type = "lowpass";
-    engineFilter.frequency.value = 420;
+    engineFilter.frequency.value = 360;
     this.engineOsc.connect(engineFilter);
     engineFilter.connect(this.engineGain);
     this.engineGain.connect(this.masterGain);
@@ -126,4 +126,3 @@ export class AudioManager {
     osc.stop(now + duration + 0.02);
   }
 }
-

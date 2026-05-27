@@ -446,6 +446,7 @@ class ChromeDriftApp {
       currentMs: this.runTimeMs,
       bestMs: this.bestRun?.timeMs ?? null,
       splitMs: this.checkpointMs,
+      speedKmh: this.telemetry.speedKmh,
       status,
       hudVisible: this.mode !== "menu" && this.mode !== "settings"
     });

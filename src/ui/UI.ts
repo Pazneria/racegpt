@@ -5,6 +5,7 @@ export interface HudState {
   currentMs: number;
   bestMs: number | null;
   splitMs: number | null;
+  speedKmh: number;
   status: string;
   hudVisible: boolean;
 }
@@ -29,6 +30,7 @@ export class UI {
   private readonly currentTime: HTMLElement;
   private readonly bestTime: HTMLElement;
   private readonly splitTime: HTMLElement;
+  private readonly speedValue: HTMLElement;
   private readonly statusChip: HTMLElement;
   private readonly countdown: HTMLElement;
   private readonly finishTime: HTMLElement;
@@ -47,6 +49,7 @@ export class UI {
     this.currentTime = getElement("current-time");
     this.bestTime = getElement("best-time");
     this.splitTime = getElement("split-time");
+    this.speedValue = getElement("speed-value");
     this.statusChip = getElement("status-chip");
     this.countdown = getElement("countdown");
     this.finishTime = getElement("finish-time");
@@ -102,6 +105,7 @@ export class UI {
     this.currentTime.textContent = formatTime(state.currentMs);
     this.bestTime.textContent = formatTime(state.bestMs);
     this.splitTime.textContent = formatTime(state.splitMs);
+    this.speedValue.textContent = `${Math.round(state.speedKmh)} km/h`;
     this.statusChip.textContent = state.status;
     this.setHudVisible(state.hudVisible);
   }
@@ -158,4 +162,3 @@ function getInput(id: string): HTMLInputElement {
 function bind(id: string, callback: () => void): void {
   getElement(id).addEventListener("click", () => callback());
 }
-

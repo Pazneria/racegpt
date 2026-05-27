@@ -207,11 +207,15 @@ input[type="checkbox"] {
 }
 
 .time-card {
-  min-width: 132px;
+  min-width: 124px;
   padding: 11px 13px;
   border: 1px solid rgba(240, 245, 248, 0.18);
   border-radius: 6px;
   background: rgba(12, 16, 20, 0.7);
+}
+
+.time-card--speed {
+  min-width: 112px;
 }
 
 .time-card span {
@@ -298,4 +302,3 @@ input[type="checkbox"] {
     justify-content: space-between;
   }
 }
-

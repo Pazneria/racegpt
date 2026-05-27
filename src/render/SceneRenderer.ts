@@ -1,6 +1,8 @@
 import {
   AmbientLight,
   BoxGeometry,
+  BufferAttribute,
+  BufferGeometry,
   CanvasTexture,
   Color,
   CylinderGeometry,
@@ -173,28 +175,63 @@ export class SceneRenderer {
   }
 
   private addBarriers(): void {
-    const barrierMaterial = new MeshStandardMaterial({
-      color: 0xd7d9db,
-      roughness: 0.64,
-      metalness: 0.08
+    const wallMaterial = new MeshStandardMaterial({
+      color: 0xb9bec3,
+      roughness: 0.72,
+      metalness: 0.06,
+      side: DoubleSide
     });
-    const railGeometry = new BoxGeometry(0.45, 0.55, 3.8);
 
-    for (let index = 4; index < this.track.samples.length - 4; index += 3) {
-      const sample = this.track.samples[index];
-      for (const sign of [-1, 1]) {
-        const rail = new Mesh(railGeometry, barrierMaterial);
-        const basis = new Matrix4().makeBasis(sample.side, sample.normal, sample.tangent);
-        rail.quaternion.setFromRotationMatrix(basis);
-        rail.position
-          .copy(sample.center)
-          .addScaledVector(sample.side, sign * this.track.barrierOffset)
-          .addScaledVector(sample.normal, 0.28);
-        rail.castShadow = true;
-        rail.receiveShadow = true;
-        this.scene.add(rail);
-      }
+    for (const sign of [-1, 1]) {
+      const wall = new Mesh(this.createBarrierGeometry(sign), wallMaterial);
+      wall.castShadow = true;
+      wall.receiveShadow = true;
+      this.scene.add(wall);
     }
+  }
+
+  private createBarrierGeometry(sign: number): BufferGeometry {
+    const vertices: number[] = [];
+    const indices: number[] = [];
+    const inner = this.track.barrierOffset - 0.55;
+    const outer = this.track.barrierOffset + 0.45;
+    const height = 1.05;
+
+    this.track.samples.forEach((sample, index) => {
+      const innerBase = this.track
+        .getSurfacePoint(sample, sign * inner)
+        .addScaledVector(sample.normal, 0.03);
+      const outerBase = this.track
+        .getSurfacePoint(sample, sign * outer)
+        .addScaledVector(sample.normal, 0.03);
+      const innerTop = innerBase.clone().addScaledVector(sample.normal, height);
+      const outerTop = outerBase.clone().addScaledVector(sample.normal, height);
+      vertices.push(
+        innerBase.x, innerBase.y, innerBase.z,
+        innerTop.x, innerTop.y, innerTop.z,
+        outerTop.x, outerTop.y, outerTop.z,
+        outerBase.x, outerBase.y, outerBase.z
+      );
+
+      if (index < this.track.samples.length - 1) {
+        const base = index * 4;
+        const next = base + 4;
+        indices.push(
+          base, next, base + 1,
+          base + 1, next, next + 1,
+          base + 1, next + 1, base + 2,
+          base + 2, next + 1, next + 2,
+          base + 2, next + 2, base + 3,
+          base + 3, next + 2, next + 3
+        );
+      }
+    });
+
+    const geometry = new BufferGeometry();
+    geometry.setAttribute("position", new BufferAttribute(new Float32Array(vertices), 3));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+    return geometry;
   }
 
   private addIndustrialScenery(): void {
@@ -259,57 +296,116 @@ export class SceneRenderer {
   private createCarModel(ghost: boolean): Group {
     const group = new Group();
     const bodyMaterial = new MeshStandardMaterial({
-      color: ghost ? 0x9fb8c8 : 0xbfc6cc,
-      roughness: 0.43,
-      metalness: ghost ? 0.05 : 0.25,
+      color: ghost ? 0xa9c0cd : 0xc9d0d5,
+      roughness: 0.39,
+      metalness: ghost ? 0.05 : 0.32,
       transparent: ghost,
       opacity: ghost ? 0.34 : 1
     });
     const glassMaterial = new MeshStandardMaterial({
-      color: ghost ? 0xbad3e1 : 0x23313b,
+      color: ghost ? 0xbad3e1 : 0x1b2a35,
       roughness: 0.18,
       metalness: 0.1,
       transparent: ghost,
       opacity: ghost ? 0.22 : 1
     });
+    const trimMaterial = new MeshStandardMaterial({
+      color: ghost ? 0x6f8794 : 0x252a2f,
+      roughness: 0.62,
+      metalness: ghost ? 0.04 : 0.18,
+      transparent: ghost,
+      opacity: ghost ? 0.24 : 1
+    });
     const tireMaterial = new MeshStandardMaterial({
-      color: ghost ? 0x6f8794 : 0x171a1d,
+      color: ghost ? 0x6f8794 : 0x111417,
       roughness: 0.82,
       metalness: 0.02,
       transparent: ghost,
       opacity: ghost ? 0.26 : 1
     });
+    const rimMaterial = new MeshStandardMaterial({
+      color: ghost ? 0x91a6b2 : 0xaeb5bb,
+      roughness: 0.36,
+      metalness: ghost ? 0.04 : 0.42,
+      transparent: ghost,
+      opacity: ghost ? 0.24 : 1
+    });
+    const headlightMaterial = new MeshStandardMaterial({
+      color: ghost ? 0xbad3e1 : 0xe6edf1,
+      emissive: ghost ? 0x000000 : 0xcbd6df,
+      emissiveIntensity: ghost ? 0 : 0.28,
+      roughness: 0.22,
+      transparent: ghost,
+      opacity: ghost ? 0.2 : 1
+    });
+    const tailLightMaterial = new MeshStandardMaterial({
+      color: ghost ? 0x9fb8c8 : 0xbd3030,
+      emissive: ghost ? 0x000000 : 0x8c1717,
+      emissiveIntensity: ghost ? 0 : 0.22,
+      roughness: 0.34,
+      transparent: ghost,
+      opacity: ghost ? 0.2 : 1
+    });
 
-    const body = new Mesh(new BoxGeometry(2.4, 0.62, 4.35), bodyMaterial);
-    body.position.y = 0.58;
-    body.castShadow = !ghost;
-    body.receiveShadow = !ghost;
-    group.add(body);
+    const addBox = (
+      width: number,
+      height: number,
+      depth: number,
+      material: MeshStandardMaterial,
+      x: number,
+      y: number,
+      z: number
+    ): Mesh => {
+      const mesh = new Mesh(new BoxGeometry(width, height, depth), material);
+      mesh.position.set(x, y, z);
+      mesh.castShadow = !ghost;
+      mesh.receiveShadow = !ghost;
+      group.add(mesh);
+      return mesh;
+    };
 
-    const nose = new Mesh(new BoxGeometry(2.05, 0.36, 1.35), bodyMaterial);
-    nose.position.set(0, 0.47, 1.72);
-    nose.castShadow = !ghost;
-    group.add(nose);
+    addBox(2.48, 0.22, 4.92, trimMaterial, 0, 0.34, -0.05);
+    addBox(2.34, 0.48, 4.52, bodyMaterial, 0, 0.56, -0.08);
+    addBox(2.02, 0.34, 1.72, bodyMaterial, 0, 0.68, 1.42);
+    addBox(2.12, 0.36, 1.18, bodyMaterial, 0, 0.72, -1.62);
+    addBox(1.48, 0.68, 1.26, glassMaterial, 0, 1.02, -0.32);
+    addBox(1.28, 0.12, 0.95, trimMaterial, 0, 1.4, -0.34);
+    addBox(2.38, 0.18, 0.22, trimMaterial, 0, 0.38, 2.36);
+    addBox(2.28, 0.2, 0.24, trimMaterial, 0, 0.46, -2.42);
+    addBox(2.75, 0.08, 0.42, trimMaterial, 0, 1.1, -2.2);
+    addBox(0.14, 0.52, 0.12, trimMaterial, -0.86, 0.88, -2.05);
+    addBox(0.14, 0.52, 0.12, trimMaterial, 0.86, 0.88, -2.05);
+    addBox(0.42, 0.14, 0.08, headlightMaterial, -0.58, 0.67, 2.63);
+    addBox(0.42, 0.14, 0.08, headlightMaterial, 0.58, 0.67, 2.63);
+    addBox(0.34, 0.14, 0.08, tailLightMaterial, -0.66, 0.65, -2.66);
+    addBox(0.34, 0.14, 0.08, tailLightMaterial, 0.66, 0.65, -2.66);
+    addBox(0.16, 0.18, 2.72, trimMaterial, -1.26, 0.43, -0.08);
+    addBox(0.16, 0.18, 2.72, trimMaterial, 1.26, 0.43, -0.08);
 
-    const cabin = new Mesh(new BoxGeometry(1.55, 0.58, 1.32), glassMaterial);
-    cabin.position.set(0, 1.02, -0.42);
-    cabin.castShadow = !ghost;
-    group.add(cabin);
-
-    const wheelGeometry = new CylinderGeometry(0.38, 0.38, 0.42, 18);
+    const tireGeometry = new CylinderGeometry(0.43, 0.43, 0.48, 24);
+    const rimGeometry = new CylinderGeometry(0.22, 0.22, 0.5, 18);
     const wheelPositions = [
-      [-1.28, 0.32, 1.38],
-      [1.28, 0.32, 1.38],
-      [-1.28, 0.32, -1.48],
-      [1.28, 0.32, -1.48]
+      [-1.26, 0.39, 1.42],
+      [1.26, 0.39, 1.42],
+      [-1.26, 0.39, -1.55],
+      [1.26, 0.39, -1.55]
     ] as const;
     for (const [x, y, z] of wheelPositions) {
-      const wheel = new Mesh(wheelGeometry, tireMaterial);
-      wheel.rotation.z = Math.PI / 2;
-      wheel.position.set(x, y, z);
-      wheel.castShadow = !ghost;
-      group.add(wheel);
-      if (!ghost) this.wheelMeshes.push(wheel);
+      const tire = new Mesh(tireGeometry, tireMaterial);
+      tire.rotation.z = Math.PI / 2;
+      tire.position.set(x, y, z);
+      tire.castShadow = !ghost;
+      group.add(tire);
+
+      const rim = new Mesh(rimGeometry, rimMaterial);
+      rim.rotation.z = Math.PI / 2;
+      rim.position.set(x, y, z);
+      rim.castShadow = !ghost;
+      group.add(rim);
+
+      if (!ghost) {
+        this.wheelMeshes.push(tire, rim);
+      }
     }
 
     return group;

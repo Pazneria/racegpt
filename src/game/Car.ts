@@ -21,7 +21,7 @@ export interface CarTelemetry {
 }
 
 const WORLD_UP = new Vector3(0, 1, 0);
-const RIDE_HEIGHT = 0.08;
+const RIDE_HEIGHT = 0.04;
 
 export class Car {
   readonly position = new Vector3();
@@ -79,8 +79,8 @@ export class Car {
     this.driftBlend = damp(this.driftBlend, wantsDrift ? 1 : 0, wantsDrift ? 7 : 3.5, dt);
 
     if (controlsEnabled) {
-      const throttlePower = lerp(28, 13, inverseLerp(0, 38, Math.max(0, localForwardSpeed)));
-      if (throttle > 0 && localForwardSpeed < 38) {
+      const throttlePower = lerp(32, 13, inverseLerp(0, 46, Math.max(0, localForwardSpeed)));
+      if (throttle > 0 && localForwardSpeed < 46) {
         this.velocity.addScaledVector(forward, throttle * throttlePower * dt);
       }
 
@@ -93,9 +93,9 @@ export class Car {
       }
 
       const steerAuthority = clamp(speed / 18, 0, 1);
-      const highSpeedFalloff = lerp(1, 0.62, inverseLerp(24, 42, speed));
-      const driftYawBonus = lerp(1, 1.36, this.driftBlend);
-      this.yaw += steer * steerAuthority * highSpeedFalloff * driftYawBonus * 1.72 * dt;
+      const highSpeedFalloff = lerp(1, 0.52, inverseLerp(26, 52, speed));
+      const driftYawBonus = lerp(1, 1.22, this.driftBlend);
+      this.yaw += steer * steerAuthority * highSpeedFalloff * driftYawBonus * 1.48 * dt;
     }
 
     const currentForward = this.getForward();
@@ -117,7 +117,7 @@ export class Car {
       .multiplyScalar(rebuiltForwardSpeed)
       .addScaledVector(currentRight, localSideSpeed);
 
-    const drag = 0.008 * this.velocity.lengthSq();
+    const drag = 0.0066 * this.velocity.lengthSq();
     if (drag > 0) {
       this.velocity.addScaledVector(this.velocity.clone().normalize(), -drag * dt);
     }
@@ -125,7 +125,7 @@ export class Car {
     this.position.addScaledVector(this.velocity, dt);
 
     const contactAfter = track.getClosestContact(this.position);
-    const barrierHit = this.resolveBarrier(track, contactAfter, dt);
+    const barrierHit = this.resolveBarrier(contactAfter, track.barrierOffset);
     const grounded = track.getClosestContact(this.position);
     this.position.y = grounded.surfacePoint.y + grounded.sample.normal.y * RIDE_HEIGHT;
     this.lastContact = grounded;
@@ -140,7 +140,7 @@ export class Car {
       slipAmount,
       onRoad: grounded.onRoad,
       barrierHit,
-      engineLoad: Math.max(throttle, brake * 0.25, inverseLerp(0, 34, Math.abs(rebuiltForwardSpeed)) * 0.45)
+      engineLoad: Math.max(throttle, brake * 0.25, inverseLerp(0, 42, Math.abs(rebuiltForwardSpeed)) * 0.45)
     };
   }
 
@@ -167,36 +167,30 @@ export class Car {
     return { forward, right, up };
   }
 
-  private resolveBarrier(track: Track, contact: TrackContact, dt: number): boolean {
-    const limit = track.barrierOffset;
-    const activeLimit = limit - 0.5;
-    if (contact.absLateral <= activeLimit) return false;
+  private resolveBarrier(contact: TrackContact, barrierOffset: number): boolean {
+    const limit = barrierOffset - 0.85;
+    if (contact.absLateral <= limit) return false;
 
     const sign = Math.sign(contact.lateral) || 1;
     const forwardOffset = this.position.clone().sub(contact.sample.center).dot(contact.sample.tangent);
     this.position
       .copy(contact.sample.center)
       .addScaledVector(contact.sample.tangent, forwardOffset)
-      .addScaledVector(contact.sample.side, sign * activeLimit);
+      .addScaledVector(contact.sample.side, sign * limit);
 
     const outward = contact.sample.side.clone().multiplyScalar(sign).normalize();
     const outwardVelocity = this.velocity.dot(outward);
-    const forwardAlongTrack = Math.max(7, this.velocity.dot(contact.sample.tangent));
-    const slideS = contact.s + forwardAlongTrack * dt * 2.5;
-    const slideSample = track.getSampleAtS(slideS);
+    const forwardAlongTrack = this.velocity.dot(contact.sample.tangent);
+    const wallBounce = outwardVelocity > 0 ? outwardVelocity * 1.22 : 0;
     this.velocity
-      .copy(slideSample.tangent)
-      .multiplyScalar(forwardAlongTrack * 0.88)
-      .addScaledVector(outward, outwardVelocity > 0 ? -0.8 : -0.35);
+      .addScaledVector(outward, -wallBounce)
+      .addScaledVector(contact.sample.tangent, -forwardAlongTrack * 0.08);
 
-    this.position
-      .copy(slideSample.center)
-      .addScaledVector(slideSample.side, sign * activeLimit)
-      .addScaledVector(slideSample.normal, 0.04);
+    const correctedVelocity = this.velocity.lengthSq() > 0.001
+      ? Math.atan2(this.velocity.x, this.velocity.z)
+      : Math.atan2(contact.sample.tangent.x, contact.sample.tangent.z);
+    this.yaw += shortestAngleDelta(this.yaw, correctedVelocity) * 0.16;
 
-    const trackYaw = Math.atan2(slideSample.tangent.x, slideSample.tangent.z);
-    this.yaw += shortestAngleDelta(this.yaw, trackYaw) * 0.3;
-
-    return contact.absLateral > limit;
+    return outwardVelocity > 1.1 || contact.absLateral > limit + 0.45;
   }
 }
