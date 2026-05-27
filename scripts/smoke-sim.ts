@@ -1,0 +1,86 @@
+import { Car, type CarTelemetry } from "../src/game/Car";
+import { getAutopilotInput } from "../src/game/Autopilot";
+import { Track } from "../src/game/Track";
+import type { InputSnapshot } from "../src/input/InputManager";
+
+const track = new Track();
+const car = new Car();
+let telemetry: CarTelemetry = {
+  speedMps: 0,
+  speedKmh: 0,
+  driftAmount: 0,
+  slipAmount: 0,
+  onRoad: true,
+  barrierHit: false,
+  engineLoad: 0
+};
+
+const neutralInput: InputSnapshot = {
+  steer: 0,
+  throttle: 0,
+  brake: 0,
+  checkpointResetPressed: false,
+  fullRestartPressed: false,
+  pausePressed: false,
+  confirmPressed: false,
+  anyGamepad: false
+};
+
+car.resetTo(track.startPose, 0);
+
+const dt = 1 / 120;
+let timeMs = 0;
+let lastS = track.startS;
+let checkpointMs: number | null = null;
+
+for (let step = 0; step < 120 * 90; step += 1) {
+  const input = getAutopilotInput(neutralInput, car, track, telemetry);
+  telemetry = car.update(input, track, dt, true);
+  timeMs += dt * 1000;
+  const contact = car.getContact(track);
+
+  if (checkpointMs == null && lastS < track.checkpointS && contact.s >= track.checkpointS) {
+    checkpointMs = timeMs;
+  }
+
+  if (lastS < track.finishS && contact.s >= track.finishS) {
+    console.log(
+      JSON.stringify(
+        {
+          ok: true,
+          finishMs: Math.round(timeMs),
+          checkpointMs: checkpointMs == null ? null : Math.round(checkpointMs),
+          speedKmh: Math.round(telemetry.speedKmh),
+          trackS: Math.round(contact.s)
+        },
+        null,
+        2
+      )
+    );
+    process.exit(0);
+  }
+
+  lastS = contact.s;
+}
+
+const contact = car.getContact(track);
+console.error(
+  JSON.stringify(
+    {
+      ok: false,
+      timeMs: Math.round(timeMs),
+      checkpointMs: checkpointMs == null ? null : Math.round(checkpointMs),
+      speedKmh: Math.round(telemetry.speedKmh),
+      trackS: Math.round(contact.s),
+      finishS: Math.round(track.finishS),
+      x: Number(car.position.x.toFixed(2)),
+      y: Number(car.position.y.toFixed(2)),
+      z: Number(car.position.z.toFixed(2)),
+      yaw: Number(car.yaw.toFixed(3))
+    },
+    null,
+    2
+  )
+);
+process.exit(1);
+

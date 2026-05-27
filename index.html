@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="A browser-playable 3D time-attack racing prototype."
+    />
+    <title>Chrome Drift</title>
+  </head>
+  <body>
+    <main id="app">
+      <canvas id="game-canvas" aria-label="Chrome Drift game canvas"></canvas>
+
+      <section id="menu-screen" class="screen screen--visible">
+        <div class="menu-shell">
+          <p class="eyebrow">Private Test Facility</p>
+          <h1>Chrome Drift</h1>
+          <p class="menu-copy">
+            A short point-to-point time attack. One car, one checkpoint, one clean run.
+          </p>
+          <div class="track-card" aria-label="Selected track">
+            <span class="track-card__label">Track 01</span>
+            <strong>Banked Shakedown</strong>
+            <span>30-60 sec target · local ghost · checkpoint split</span>
+          </div>
+          <div class="menu-actions">
+            <button id="start-button" class="primary-button" type="button">Start Run</button>
+            <button id="settings-button" type="button">Settings</button>
+            <button id="return-button" type="button">Return to Arcade</button>
+          </div>
+          <p class="small-note">WASD / arrows to drive · Space brakes · R resets · Enter restarts</p>
+        </div>
+      </section>
+
+      <section id="pause-screen" class="screen">
+        <div class="dialog">
+          <p class="eyebrow">Paused</p>
+          <h2>Banked Shakedown</h2>
+          <div class="menu-actions">
+            <button id="resume-button" class="primary-button" type="button">Resume</button>
+            <button id="pause-restart-button" type="button">Restart Run</button>
+            <button id="pause-settings-button" type="button">Settings</button>
+            <button id="pause-return-button" type="button">Return to Arcade</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="finish-screen" class="screen">
+        <div class="dialog">
+          <p class="eyebrow">Finished</p>
+          <h2 id="finish-time">--:--.---</h2>
+          <p id="finish-copy" class="menu-copy">Run complete.</p>
+          <div class="menu-actions">
+            <button id="finish-restart-button" class="primary-button" type="button">Run Again</button>
+            <button id="finish-menu-button" type="button">Main Menu</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="settings-screen" class="screen">
+        <div class="dialog">
+          <p class="eyebrow">Settings</p>
+          <h2>Game Options</h2>
+          <label class="setting-row">
+            <span>Audio volume</span>
+            <input id="volume-slider" type="range" min="0" max="1" step="0.01" />
+          </label>
+          <label class="setting-row setting-row--check">
+            <span>Best-run ghost</span>
+            <input id="ghost-toggle" type="checkbox" />
+          </label>
+          <div class="menu-actions">
+            <button id="settings-back-button" class="primary-button" type="button">Back</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="hud" class="hud" aria-live="polite">
+        <div class="timing-stack">
+          <div class="time-card">
+            <span>Current</span>
+            <strong id="current-time">0:00.000</strong>
+          </div>
+          <div class="time-card">
+            <span>Best</span>
+            <strong id="best-time">--:--.---</strong>
+          </div>
+          <div class="time-card">
+            <span>Split</span>
+            <strong id="split-time">--:--.---</strong>
+          </div>
+        </div>
+        <div id="status-chip" class="status-chip">Ready</div>
+        <div class="control-strip">
+          <span>R checkpoint reset</span>
+          <span>Enter restart</span>
+          <span>Esc pause</span>
+        </div>
+      </section>
+
+      <div id="countdown" class="countdown" aria-hidden="true"></div>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
+
