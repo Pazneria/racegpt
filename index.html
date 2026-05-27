@@ -79,6 +79,10 @@
             <span>Codex 5.5 benchmark ghost</span>
             <input id="codex-ghost-toggle" type="checkbox" />
           </label>
+          <label class="setting-row setting-row--check">
+            <span>Input overlay</span>
+            <input id="input-overlay-toggle" type="checkbox" />
+          </label>
           <div class="menu-actions">
             <button id="settings-back-button" class="primary-button" type="button">Back</button>
           </div>
@@ -113,6 +117,34 @@
           <span>R checkpoint reset</span>
           <span>Enter restart</span>
           <span>Esc pause</span>
+          <span>I inputs</span>
+        </div>
+        <div id="input-overlay" class="input-overlay" aria-label="Input overlay">
+          <div class="input-overlay__header">
+            <strong>Inputs</strong>
+            <span id="input-source">Keyboard</span>
+          </div>
+          <div class="input-overlay__steer" aria-label="Steering input">
+            <span>L</span>
+            <div class="input-overlay__steer-track">
+              <i id="input-steer-dot"></i>
+            </div>
+            <span>R</span>
+          </div>
+          <div class="input-overlay__pedals">
+            <div class="input-overlay__pedal">
+              <span>Gas</span>
+              <div class="input-overlay__bar">
+                <i id="input-throttle-fill"></i>
+              </div>
+            </div>
+            <div class="input-overlay__pedal">
+              <span>Brake</span>
+              <div class="input-overlay__bar input-overlay__bar--brake">
+                <i id="input-brake-fill"></i>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

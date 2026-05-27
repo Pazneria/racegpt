@@ -1,6 +1,7 @@
 export interface GameSettings {
   volume: number;
   codexGhostEnabled: boolean;
+  inputOverlayEnabled: boolean;
   selectedTrackId: string;
 }
 
@@ -25,6 +26,7 @@ const DEFAULT_TRACK_ID = "banked-shakedown";
 const DEFAULT_SETTINGS: GameSettings = {
   volume: 0.65,
   codexGhostEnabled: true,
+  inputOverlayEnabled: false,
   selectedTrackId: DEFAULT_TRACK_ID
 };
 
@@ -39,6 +41,10 @@ export function loadSettings(): GameSettings {
         typeof parsed.codexGhostEnabled === "boolean"
           ? parsed.codexGhostEnabled
           : DEFAULT_SETTINGS.codexGhostEnabled,
+      inputOverlayEnabled:
+        typeof parsed.inputOverlayEnabled === "boolean"
+          ? parsed.inputOverlayEnabled
+          : DEFAULT_SETTINGS.inputOverlayEnabled,
       selectedTrackId:
         typeof parsed.selectedTrackId === "string"
           ? parsed.selectedTrackId

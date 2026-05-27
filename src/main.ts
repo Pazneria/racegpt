@@ -68,6 +68,8 @@ class ChromeDriftApp {
   private lastCheckpointResetAt = 0;
   private currentRecording: GhostSample[] = [];
   private recordAccumulator = 0;
+  private displayInput: InputSnapshot = neutralInput();
+  private inputSource = "Keyboard";
 
   constructor() {
     const canvas = document.getElementById("game-canvas");
@@ -76,6 +78,10 @@ class ChromeDriftApp {
     }
 
     this.track = new Track(this.urlParams.get("track") ?? this.settings.selectedTrackId);
+    if (this.urlParams.get("inputOverlay") === "1" && !this.settings.inputOverlayEnabled) {
+      this.settings = { ...this.settings, inputOverlayEnabled: true };
+      saveSettings(this.settings);
+    }
     if (this.settings.selectedTrackId !== this.track.id) {
       this.settings = { ...this.settings, selectedTrackId: this.track.id };
       saveSettings(this.settings);
@@ -99,6 +105,7 @@ class ChromeDriftApp {
       returnToArcade: () => this.returnToArcade(),
       setVolume: (volume) => this.updateVolume(volume),
       setCodexGhostEnabled: (enabled) => this.updateCodexGhostEnabled(enabled),
+      setInputOverlayEnabled: (enabled) => this.updateInputOverlayEnabled(enabled),
       setTrack: (trackId) => this.selectTrack(trackId)
     });
 
@@ -200,6 +207,12 @@ class ChromeDriftApp {
     saveSettings(this.settings);
   }
 
+  private updateInputOverlayEnabled(inputOverlayEnabled: boolean): void {
+    this.settings = { ...this.settings, inputOverlayEnabled };
+    saveSettings(this.settings);
+    this.ui.syncSettings(this.settings);
+  }
+
   private selectTrack(trackId: string): void {
     if (trackId === this.track.id) return;
     this.settings = { ...this.settings, selectedTrackId: trackId };
@@ -211,6 +224,7 @@ class ChromeDriftApp {
     params.delete("showcase");
     params.delete("showcaseTitle");
     params.delete("showcaseCopy");
+    params.delete("inputOverlay");
     window.location.search = params.toString();
   }
 
@@ -245,6 +259,8 @@ class ChromeDriftApp {
 
     const rawInput = this.input.snapshot();
     const input = this.autoplay ? this.getAutopilotInput(rawInput) : rawInput;
+    this.displayInput = input;
+    this.inputSource = this.getInputSource(rawInput);
     if (this.autoplay && this.mode === "menu") {
       this.beginCountdown();
     }
@@ -271,6 +287,10 @@ class ChromeDriftApp {
   }
 
   private handleModeInput(input: InputSnapshot): void {
+    if (input.inputOverlayPressed) {
+      this.updateInputOverlayEnabled(!this.settings.inputOverlayEnabled);
+    }
+
     if (this.mode === "menu") {
       if (input.confirmPressed) this.startRunFromGesture();
       return;
@@ -507,8 +527,20 @@ class ChromeDriftApp {
       speedKmh: this.telemetry.speedKmh,
       gear: this.telemetry.gear,
       shiftPulse: this.telemetry.shiftPulse,
-      hudVisible: this.mode !== "menu" && this.mode !== "settings"
+      hudVisible: this.mode !== "menu" && this.mode !== "settings",
+      inputOverlayVisible: this.settings.inputOverlayEnabled,
+      inputSource: this.inputSource,
+      inputSteer: this.displayInput.steer,
+      inputThrottle: this.displayInput.throttle,
+      inputBrake: this.displayInput.brake
     });
+  }
+
+  private getInputSource(rawInput: InputSnapshot): string {
+    if (this.autoplay && (this.mode === "running" || this.mode === "countdown")) {
+      return CODEX_GHOST_NAME;
+    }
+    return rawInput.anyGamepad ? "Controller" : "Keyboard";
   }
 
   private getAutopilotInput(base: InputSnapshot): InputSnapshot {
@@ -538,7 +570,13 @@ class ChromeDriftApp {
       z: this.car.position.z,
       yaw: this.car.yaw,
       passedCheckpoint: this.passedCheckpoint,
-      autoplay: this.autoplay
+      autoplay: this.autoplay,
+      input: {
+        source: this.inputSource,
+        steer: this.displayInput.steer,
+        throttle: this.displayInput.throttle,
+        brake: this.displayInput.brake
+      }
     };
     window.__chromeDriftDebug = debugState;
     document.getElementById("app")?.setAttribute("data-debug-state", JSON.stringify(debugState));
@@ -553,6 +591,20 @@ function cloneSnapshot(snapshot: CarSnapshot): CarSnapshot {
     timeMs: snapshot.timeMs,
     gear: snapshot.gear,
     rpmNormalized: snapshot.rpmNormalized
+  };
+}
+
+function neutralInput(): InputSnapshot {
+  return {
+    steer: 0,
+    throttle: 0,
+    brake: 0,
+    checkpointResetPressed: false,
+    fullRestartPressed: false,
+    pausePressed: false,
+    inputOverlayPressed: false,
+    confirmPressed: false,
+    anyGamepad: false
   };
 }
 
@@ -580,6 +632,12 @@ declare global {
       yaw: number;
       passedCheckpoint: boolean;
       autoplay: boolean;
+      input: {
+        source: string;
+        steer: number;
+        throttle: number;
+        brake: number;
+      };
     };
   }
 }

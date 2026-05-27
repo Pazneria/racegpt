@@ -1,4 +1,4 @@
-import { formatTime } from "../core/math";
+import { clamp, formatTime } from "../core/math";
 import type { GameSettings } from "../game/Storage";
 
 export interface HudState {
@@ -9,6 +9,11 @@ export interface HudState {
   gear: number;
   shiftPulse: number;
   hudVisible: boolean;
+  inputOverlayVisible: boolean;
+  inputSource: string;
+  inputSteer: number;
+  inputThrottle: number;
+  inputBrake: number;
 }
 
 export interface UIActions {
@@ -21,6 +26,7 @@ export interface UIActions {
   returnToArcade: () => void;
   setVolume: (volume: number) => void;
   setCodexGhostEnabled: (enabled: boolean) => void;
+  setInputOverlayEnabled: (enabled: boolean) => void;
   setTrack: (trackId: string) => void;
 }
 
@@ -43,6 +49,11 @@ export class UI {
   private readonly speedNeedle: HTMLElement;
   private readonly gearValue: HTMLElement;
   private readonly speedometerDial: HTMLElement;
+  private readonly inputOverlay: HTMLElement;
+  private readonly inputSource: HTMLElement;
+  private readonly inputSteerDot: HTMLElement;
+  private readonly inputThrottleFill: HTMLElement;
+  private readonly inputBrakeFill: HTMLElement;
   private readonly countdown: HTMLElement;
   private readonly pauseTrackName: HTMLElement;
   private readonly showcaseBanner: HTMLElement;
@@ -52,6 +63,7 @@ export class UI {
   private readonly finishCopy: HTMLElement;
   private readonly volumeSlider: HTMLInputElement;
   private readonly codexGhostToggle: HTMLInputElement;
+  private readonly inputOverlayToggle: HTMLInputElement;
   private readonly trackButtons: HTMLButtonElement[];
 
   constructor(private readonly actions: UIActions) {
@@ -69,6 +81,11 @@ export class UI {
     this.speedNeedle = getElement("speed-needle");
     this.gearValue = getElement("gear-value");
     this.speedometerDial = getElement("speedometer-dial");
+    this.inputOverlay = getElement("input-overlay");
+    this.inputSource = getElement("input-source");
+    this.inputSteerDot = getElement("input-steer-dot");
+    this.inputThrottleFill = getElement("input-throttle-fill");
+    this.inputBrakeFill = getElement("input-brake-fill");
     this.countdown = getElement("countdown");
     this.pauseTrackName = getElement("pause-track-name");
     this.showcaseBanner = getElement("showcase-banner");
@@ -78,6 +95,7 @@ export class UI {
     this.finishCopy = getElement("finish-copy");
     this.volumeSlider = getInput("volume-slider");
     this.codexGhostToggle = getInput("codex-ghost-toggle");
+    this.inputOverlayToggle = getInput("input-overlay-toggle");
     this.trackButtons = Array.from(document.querySelectorAll<HTMLButtonElement>(".track-option"));
 
     this.bindButtons();
@@ -86,6 +104,7 @@ export class UI {
   syncSettings(settings: GameSettings): void {
     this.volumeSlider.value = String(settings.volume);
     this.codexGhostToggle.checked = settings.codexGhostEnabled;
+    this.inputOverlayToggle.checked = settings.inputOverlayEnabled;
   }
 
   syncTracks(currentTrackId: string, tracks: readonly TrackMenuItem[]): void {
@@ -152,6 +171,14 @@ export class UI {
     this.gearValue.textContent = String(state.gear);
     this.speedNeedle.style.transform = `translate(-50%, -100%) rotate(${angle}deg)`;
     this.speedometerDial.classList.toggle("speedometer__dial--shift", state.shiftPulse > 0.15);
+    this.inputOverlay.classList.toggle(
+      "input-overlay--visible",
+      state.hudVisible && state.inputOverlayVisible
+    );
+    this.inputSource.textContent = state.inputSource;
+    this.inputSteerDot.style.transform = `translate(${clamp(state.inputSteer, -1, 1) * 72}px, -50%)`;
+    this.inputThrottleFill.style.transform = `scaleY(${clamp(state.inputThrottle, 0, 1)})`;
+    this.inputBrakeFill.style.transform = `scaleY(${clamp(state.inputBrake, 0, 1)})`;
     this.setHudVisible(state.hudVisible);
   }
 
@@ -199,6 +226,9 @@ export class UI {
     });
     this.codexGhostToggle.addEventListener("change", () => {
       this.actions.setCodexGhostEnabled(this.codexGhostToggle.checked);
+    });
+    this.inputOverlayToggle.addEventListener("change", () => {
+      this.actions.setInputOverlayEnabled(this.inputOverlayToggle.checked);
     });
     for (const button of this.trackButtons) {
       button.addEventListener("click", () => {

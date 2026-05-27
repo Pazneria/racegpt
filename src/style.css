@@ -389,6 +389,122 @@ input[type="checkbox"] {
   transform: translateX(-50%) scale(1.08);
 }
 
+.input-overlay {
+  position: absolute;
+  right: 184px;
+  bottom: 18px;
+  display: none;
+  width: 186px;
+  padding: 11px 12px 12px;
+  border: 1px solid rgba(240, 245, 248, 0.2);
+  border-radius: 6px;
+  background: rgba(12, 16, 20, 0.72);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.2);
+}
+
+.input-overlay--visible {
+  display: block;
+}
+
+.input-overlay__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 9px;
+}
+
+.input-overlay__header strong,
+.input-overlay__header span,
+.input-overlay__steer span,
+.input-overlay__pedal span {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.input-overlay__header strong {
+  color: #ffffff;
+}
+
+.input-overlay__header span,
+.input-overlay__steer span,
+.input-overlay__pedal span {
+  color: #aeb9c2;
+}
+
+.input-overlay__steer {
+  display: grid;
+  grid-template-columns: 14px 1fr 14px;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 12px;
+}
+
+.input-overlay__steer span:last-child {
+  text-align: right;
+}
+
+.input-overlay__steer-track {
+  position: relative;
+  height: 18px;
+  border: 1px solid rgba(240, 245, 248, 0.16);
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, transparent 49%, rgba(240, 245, 248, 0.34) 49% 51%, transparent 51%),
+    rgba(255, 255, 255, 0.055);
+}
+
+.input-overlay__steer-track i {
+  position: absolute;
+  left: calc(50% - 6px);
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #f3c84d;
+  box-shadow: 0 0 14px rgba(243, 200, 77, 0.32);
+  transform: translate(0, -50%);
+  transition: transform 70ms linear;
+}
+
+.input-overlay__pedals {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.input-overlay__pedal {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  align-items: center;
+  gap: 7px;
+}
+
+.input-overlay__bar {
+  position: relative;
+  height: 44px;
+  overflow: hidden;
+  border: 1px solid rgba(240, 245, 248, 0.16);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.input-overlay__bar i {
+  position: absolute;
+  inset: 0;
+  background: #f3c84d;
+  transform: scaleY(0);
+  transform-origin: 50% 100%;
+  transition: transform 70ms linear;
+}
+
+.input-overlay__bar--brake i {
+  background: #f06d5f;
+}
+
 .control-strip {
   position: absolute;
   left: 18px;
@@ -469,5 +585,10 @@ input[type="checkbox"] {
 
   .control-strip {
     display: none;
+  }
+
+  .input-overlay {
+    right: 18px;
+    bottom: 178px;
   }
 }

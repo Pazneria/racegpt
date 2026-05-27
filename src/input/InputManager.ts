@@ -5,6 +5,7 @@ export interface InputSnapshot {
   checkpointResetPressed: boolean;
   fullRestartPressed: boolean;
   pausePressed: boolean;
+  inputOverlayPressed: boolean;
   confirmPressed: boolean;
   anyGamepad: boolean;
 }
@@ -54,6 +55,7 @@ export class InputManager {
         this.wasPressed("enter") || gamepad.buttonsPressed[GAMEPAD_RESTART_BUTTON] === true,
       pausePressed:
         this.wasPressed("escape") || gamepad.buttonsPressed[GAMEPAD_PAUSE_BUTTON] === true,
+      inputOverlayPressed: this.wasPressed("i"),
       confirmPressed:
         this.wasPressed("enter") || gamepad.buttonsPressed[GAMEPAD_RESET_BUTTON] === true,
       anyGamepad: gamepad.connected

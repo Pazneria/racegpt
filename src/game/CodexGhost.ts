@@ -17,6 +17,7 @@ const NEUTRAL_INPUT: InputSnapshot = {
   checkpointResetPressed: false,
   fullRestartPressed: false,
   pausePressed: false,
+  inputOverlayPressed: false,
   confirmPressed: false,
   anyGamepad: false
 };
