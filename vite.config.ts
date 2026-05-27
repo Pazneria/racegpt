@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 
 export default defineConfig(({ command }) => ({
-  base: command === "build" ? "/chrome-drift/" : "/",
+  base: command === "build" ? "/racegpt/" : "/",
   server: {
     port: 5178,
     strictPort: false
@@ -11,4 +11,3 @@ export default defineConfig(({ command }) => ({
     strictPort: false
   }
 }));
-

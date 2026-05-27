@@ -29,7 +29,7 @@ Vite defaults to `http://127.0.0.1:5178`.
 npm.cmd run build
 ```
 
-The production base path is still `/chrome-drift/` for GitHub Pages.
+The production base path is `/racegpt/` for GitHub Pages.
 
 ## Implementation Notes
 
@@ -54,5 +54,5 @@ The GitHub Pages workflow builds and deploys `dist` from `main`. Once this repos
 exists under the Pazneria account, the arcade should link to:
 
 ```text
-https://pazneria.github.io/chrome-drift/
+https://pazneria.github.io/racegpt/
 ```

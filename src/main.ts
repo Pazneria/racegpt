@@ -625,7 +625,6 @@ class RaceGptApp {
       }
     };
     window.__raceGptDebug = debugState;
-    window.__chromeDriftDebug = debugState;
     document.getElementById("app")?.setAttribute("data-debug-state", JSON.stringify(debugState));
   }
 }
@@ -688,6 +687,5 @@ type RaceGptDebugState = {
 declare global {
   interface Window {
     __raceGptDebug?: RaceGptDebugState;
-    __chromeDriftDebug?: RaceGptDebugState;
   }
 }

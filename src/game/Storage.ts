@@ -22,7 +22,6 @@ export interface GhostRecording {
 }
 
 const SETTINGS_KEY = "racegpt:settings";
-const LEGACY_SETTINGS_KEY = "chrome-drift:settings";
 const DEFAULT_TRACK_ID = "banked-shakedown";
 
 const DEFAULT_SETTINGS: GameSettings = {
@@ -35,7 +34,7 @@ const DEFAULT_SETTINGS: GameSettings = {
 
 export function loadSettings(): GameSettings {
   try {
-    const raw = localStorage.getItem(SETTINGS_KEY) ?? localStorage.getItem(LEGACY_SETTINGS_KEY);
+    const raw = localStorage.getItem(SETTINGS_KEY);
     if (!raw) return { ...DEFAULT_SETTINGS };
     const parsed = JSON.parse(raw) as Partial<GameSettings>;
     return {
