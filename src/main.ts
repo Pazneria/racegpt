@@ -270,17 +270,17 @@ class RaceGptApp {
     this.accumulator += rawDt;
 
     const rawInput = this.input.snapshot();
-    const input = this.autoplay ? this.getAutopilotInput(rawInput) : rawInput;
-    this.displayInput = input;
+    const frameInput = this.autoplay ? this.getAutopilotInput(rawInput) : rawInput;
+    this.displayInput = frameInput;
     this.inputSource = this.getInputSource(rawInput);
     if (this.autoplay && this.mode === "menu") {
       this.beginCountdown();
     }
-    this.handleModeInput(input);
+    this.handleModeInput(frameInput);
 
     let steps = 0;
     while (this.accumulator >= FIXED_DT && steps < MAX_STEPS) {
-      this.fixedStep(input, FIXED_DT);
+      this.fixedStep(rawInput, FIXED_DT);
       this.accumulator -= FIXED_DT;
       steps += 1;
     }
@@ -330,7 +330,10 @@ class RaceGptApp {
     }
   }
 
-  private fixedStep(input: InputSnapshot, dt: number): void {
+  private fixedStep(baseInput: InputSnapshot, dt: number): void {
+    const input = this.autoplay ? this.getAutopilotInput(baseInput) : baseInput;
+    this.displayInput = input;
+
     if (this.mode === "menu" || this.mode === "settings" || this.mode === "finished") {
       this.telemetry = this.car.update(input, this.track, dt, false);
       return;

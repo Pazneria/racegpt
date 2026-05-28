@@ -22,23 +22,87 @@ const TRACK_B_DRIVER = {
 };
 
 const TRACK_C_DRIVER = {
-  lookBase: -10.146169572882354,
-  lookScale: 1.1,
-  lookMin: 60.155049370974304,
-  lookMax: 99.09871760783717,
-  curveLook: 164.56213608458637,
-  steerGain: 5.347461025938392,
-  lateralGain: 0.020168463552556932,
-  feedForward: -0.10281552664423362,
-  baseLateral: 1.4161102748438719,
-  turnLateral: -0.08762785440776599,
-  curveLateral: -6.026140157999472,
-  throttle: 0.9192713783472776,
-  brakeSpeed: 78.2444646121934,
-  brakeAmount: 0.48,
-  brakeCurve: 0.8477007774766533,
-  curveDiv: 1.2704933725465088,
-  latClamp: 9.88118609033525
+  split1: 1676.818208738072,
+  split2: 3010.23197456696,
+  split3: 3600.1054152950824,
+  sectors: {
+    start: {
+      lookBase: 14.141006682822788,
+      lookScale: 0.8339823655900572,
+      lookMin: 55.56322676950339,
+      lookMax: 112.22567047815387,
+      curveLook: 171.76072948415126,
+      steerGain: 5.904656696912638,
+      lateralGain: 0.04054387999867911,
+      feedForward: -0.15022539761091594,
+      baseLateral: 1.132045064104493,
+      turnLateral: -2.568300855046658,
+      curveLateral: -5.831235969041437,
+      throttle: 0.997745620973729,
+      brakeSpeed: 80.5195017000455,
+      brakeAmount: 0.5149671834582765,
+      brakeCurve: 0.7145700962930196,
+      curveDiv: 1.5215464276466877,
+      latClamp: 8.661341248504867
+    },
+    middle: {
+      lookBase: 9.80799100537396,
+      lookScale: 1.0464105497324894,
+      lookMin: 62.067305028945306,
+      lookMax: 138.30449505164444,
+      curveLook: 186.1834404146536,
+      steerGain: 5.826447392322659,
+      lateralGain: 0.057530302745767925,
+      feedForward: 0.04335082037241125,
+      baseLateral: 1.776367421899096,
+      turnLateral: -0.8799535015776946,
+      curveLateral: -4.343004083071295,
+      throttle: 0.9996911146303104,
+      brakeSpeed: 106.29867903715846,
+      brakeAmount: 0.4709787326603551,
+      brakeCurve: 0.7864750761965253,
+      curveDiv: 1.6067417549970515,
+      latClamp: 8.26978851977656
+    },
+    late: {
+      lookBase: 11.704694861844333,
+      lookScale: 0.8379466718355401,
+      lookMin: 53.11368639504169,
+      lookMax: 115.71479183162482,
+      curveLook: 165.56222794933583,
+      steerGain: 6.077398581538224,
+      lateralGain: 0.04744046170412082,
+      feedForward: -0.09201819405158054,
+      baseLateral: 0.7732297264786089,
+      turnLateral: -2.4634607197827605,
+      curveLateral: -5.170612297439843,
+      throttle: 0.9886673775391843,
+      brakeSpeed: 87.78597718659579,
+      brakeAmount: 0.6292958915930176,
+      brakeCurve: 0.7054068010051296,
+      curveDiv: 1.5061117714368053,
+      latClamp: 8.034345247206623
+    },
+    finish: {
+      lookBase: 11.500608106930704,
+      lookScale: 0.8689921272336969,
+      lookMin: 52.78446825855297,
+      lookMax: 115.07445399848861,
+      curveLook: 161.33241744919573,
+      steerGain: 5.983005278881262,
+      lateralGain: 0.047361948411057224,
+      feedForward: -0.14070662638579726,
+      baseLateral: 0.5750058228041562,
+      turnLateral: -2.15525954586077,
+      curveLateral: -4.998242351148615,
+      throttle: 0.9890848080482791,
+      brakeSpeed: 93.81259988300636,
+      brakeAmount: 0.6295564097082952,
+      brakeCurve: 0.7446019274746966,
+      curveDiv: 1.5229166707363284,
+      latClamp: 8.045922097316975
+    }
+  }
 };
 
 export function getAutopilotInput(
@@ -148,23 +212,23 @@ function getTrackCInput(
   telemetry: CarTelemetry
 ): InputSnapshot {
   const contact = car.getContact(track);
+  const driver = getTrackCDriver(contact.s);
   const lookAhead = clamp(
-    TRACK_C_DRIVER.lookBase + telemetry.speedMps * TRACK_C_DRIVER.lookScale,
-    TRACK_C_DRIVER.lookMin,
-    TRACK_C_DRIVER.lookMax
+    driver.lookBase + telemetry.speedMps * driver.lookScale,
+    driver.lookMin,
+    driver.lookMax
   );
   const target = track.getSampleAtS(contact.s + lookAhead);
-  const curveTarget = track.getSampleAtS(contact.s + TRACK_C_DRIVER.curveLook);
+  const curveTarget = track.getSampleAtS(contact.s + driver.curveLook);
   const currentYaw = Math.atan2(contact.sample.tangent.x, contact.sample.tangent.z);
   const curveYaw = Math.atan2(curveTarget.tangent.x, curveTarget.tangent.z);
   const curveDelta = shortestAngleDelta(currentYaw, curveYaw);
   const turnSign = Math.sign(curveDelta);
-  const curveAmount = Math.min(1, Math.abs(curveDelta) / TRACK_C_DRIVER.curveDiv);
+  const curveAmount = Math.min(1, Math.abs(curveDelta) / driver.curveDiv);
   const targetLateral = clamp(
-    TRACK_C_DRIVER.baseLateral +
-      turnSign * (TRACK_C_DRIVER.turnLateral + TRACK_C_DRIVER.curveLateral * curveAmount),
-    -TRACK_C_DRIVER.latClamp,
-    TRACK_C_DRIVER.latClamp
+    driver.baseLateral + turnSign * (driver.turnLateral + driver.curveLateral * curveAmount),
+    -driver.latClamp,
+    driver.latClamp
   );
   const toTarget = target.center
     .clone()
@@ -173,25 +237,38 @@ function getTrackCInput(
   const desiredYaw = Math.atan2(toTarget.x, toTarget.z);
   const headingError = shortestAngleDelta(car.yaw, desiredYaw);
   const steer = clamp(
-    headingError * TRACK_C_DRIVER.steerGain +
-      (targetLateral - contact.lateral) * TRACK_C_DRIVER.lateralGain +
-      turnSign * TRACK_C_DRIVER.feedForward,
+    headingError * driver.steerGain +
+      (targetLateral - contact.lateral) * driver.lateralGain +
+      turnSign * driver.feedForward,
     -1,
     1
   );
   const brake =
-    telemetry.speedMps > TRACK_C_DRIVER.brakeSpeed && curveAmount > TRACK_C_DRIVER.brakeCurve
-      ? TRACK_C_DRIVER.brakeAmount * curveAmount
+    telemetry.speedMps > driver.brakeSpeed && curveAmount > driver.brakeCurve
+      ? driver.brakeAmount * curveAmount
       : 0;
 
   return {
     ...base,
     steer,
-    throttle: TRACK_C_DRIVER.throttle,
+    throttle: driver.throttle,
     brake,
     checkpointResetPressed: false,
     fullRestartPressed: false,
     pausePressed: false,
     confirmPressed: false
   };
+}
+
+function getTrackCDriver(s: number): (typeof TRACK_C_DRIVER)["sectors"]["start"] {
+  if (s < TRACK_C_DRIVER.split1) {
+    return TRACK_C_DRIVER.sectors.start;
+  }
+  if (s < TRACK_C_DRIVER.split2) {
+    return TRACK_C_DRIVER.sectors.middle;
+  }
+  if (s < TRACK_C_DRIVER.split3) {
+    return TRACK_C_DRIVER.sectors.late;
+  }
+  return TRACK_C_DRIVER.sectors.finish;
 }
