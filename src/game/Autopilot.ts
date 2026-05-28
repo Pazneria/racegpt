@@ -22,21 +22,23 @@ const TRACK_B_DRIVER = {
 };
 
 const TRACK_C_DRIVER = {
-  lookBase: 11.779,
-  lookScale: 4.198,
-  lookMin: 14,
-  lookMax: 77.308,
-  curveLook: 190.071,
-  steerGain: 4.607,
-  lateralGain: 0.0382,
-  feedForward: -0.1757,
-  baseLateral: 0,
-  turnLateral: -1.694,
-  curveLateral: 0,
-  throttle: 1,
-  brakeSpeed: 72,
-  brakeAmount: 0.08,
-  brakeCurve: 0.48
+  lookBase: -10.146169572882354,
+  lookScale: 1.1,
+  lookMin: 60.155049370974304,
+  lookMax: 99.09871760783717,
+  curveLook: 164.56213608458637,
+  steerGain: 5.347461025938392,
+  lateralGain: 0.020168463552556932,
+  feedForward: -0.10281552664423362,
+  baseLateral: 1.4161102748438719,
+  turnLateral: -0.08762785440776599,
+  curveLateral: -6.026140157999472,
+  throttle: 0.9192713783472776,
+  brakeSpeed: 78.2444646121934,
+  brakeAmount: 0.48,
+  brakeCurve: 0.8477007774766533,
+  curveDiv: 1.2704933725465088,
+  latClamp: 9.88118609033525
 };
 
 export function getAutopilotInput(
@@ -157,12 +159,12 @@ function getTrackCInput(
   const curveYaw = Math.atan2(curveTarget.tangent.x, curveTarget.tangent.z);
   const curveDelta = shortestAngleDelta(currentYaw, curveYaw);
   const turnSign = Math.sign(curveDelta);
-  const curveAmount = Math.min(1, Math.abs(curveDelta) / 1.05);
+  const curveAmount = Math.min(1, Math.abs(curveDelta) / TRACK_C_DRIVER.curveDiv);
   const targetLateral = clamp(
     TRACK_C_DRIVER.baseLateral +
       turnSign * (TRACK_C_DRIVER.turnLateral + TRACK_C_DRIVER.curveLateral * curveAmount),
-    -8.4,
-    8.4
+    -TRACK_C_DRIVER.latClamp,
+    TRACK_C_DRIVER.latClamp
   );
   const toTarget = target.center
     .clone()
