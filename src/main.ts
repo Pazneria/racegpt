@@ -43,9 +43,11 @@ class RaceGptApp {
   private telemetry: CarTelemetry = {
     speedMps: 0,
     speedKmh: 0,
+    verticalSpeedMps: 0,
     driftAmount: 0,
     slipAmount: 0,
     onRoad: true,
+    airborne: false,
     barrierHit: false,
     engineLoad: 0,
     steerInput: 0,
@@ -620,6 +622,8 @@ class RaceGptApp {
       checkpointSs: [...this.track.checkpointSs],
       finishS: this.track.finishS,
       speedKmh: this.telemetry.speedKmh,
+      verticalSpeedMps: this.telemetry.verticalSpeedMps,
+      airborne: this.telemetry.airborne,
       gear: this.telemetry.gear,
       rpmNormalized: this.telemetry.rpmNormalized,
       shiftPulse: this.telemetry.shiftPulse,
@@ -649,7 +653,8 @@ function cloneSnapshot(snapshot: CarSnapshot): CarSnapshot {
     yaw: snapshot.yaw,
     timeMs: snapshot.timeMs,
     gear: snapshot.gear,
-    rpmNormalized: snapshot.rpmNormalized
+    rpmNormalized: snapshot.rpmNormalized,
+    airborne: snapshot.airborne
   };
 }
 
@@ -682,6 +687,8 @@ type RaceGptDebugState = {
   checkpointSs: number[];
   finishS: number;
   speedKmh: number;
+  verticalSpeedMps: number;
+  airborne: boolean;
   gear: number;
   rpmNormalized: number;
   shiftPulse: number;

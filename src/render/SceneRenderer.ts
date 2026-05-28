@@ -214,6 +214,7 @@ export class SceneRenderer {
 
     for (let index = 4; index < this.track.samples.length - 4; index += 5) {
       const sample = this.track.samples[index];
+      if (!sample.hasRoad) continue;
       const material = Math.floor(index / 10) % 2 === 0 ? redMaterial : whiteMaterial;
       for (const sign of [-1, 1]) {
         const curb = new Mesh(curbGeometry, material);
@@ -292,7 +293,7 @@ export class SceneRenderer {
 
     for (let index = 8; index < this.track.samples.length - 8; index += 8) {
       const sample = this.track.samples[index];
-      if (sample.center.y < 1.3) continue;
+      if (!sample.hasRoad || sample.center.y < 1.3) continue;
 
       const deck = new Mesh(deckGeometry, deckMaterial);
       const basis = new Matrix4().makeBasis(sample.side, sample.normal, sample.tangent);
@@ -305,7 +306,7 @@ export class SceneRenderer {
 
     for (let index = 20; index < this.track.samples.length - 20; index += 28) {
       const sample = this.track.samples[index];
-      if (sample.center.y < 2.3) continue;
+      if (!sample.hasRoad || sample.center.y < 2.3) continue;
 
       const beam = new Mesh(crossBeamGeometry, columnMaterial);
       const basis = new Matrix4().makeBasis(sample.side, sample.normal, sample.tangent);
@@ -368,7 +369,7 @@ export class SceneRenderer {
         outerBase.x, outerBase.y, outerBase.z
       );
 
-      if (index < this.track.samples.length - 1) {
+      if (index < this.track.samples.length - 1 && sample.hasRoad && this.track.samples[index + 1].hasRoad) {
         const base = index * 4;
         const next = base + 4;
         indices.push(
@@ -762,6 +763,7 @@ export class SceneRenderer {
   ): void {
     this.skidAccumulator += dt;
     const shouldMark =
+      !telemetry.airborne &&
       telemetry.speedKmh > 58 &&
       (Math.abs(telemetry.steerInput) > 0.24 || telemetry.slipAmount > 0.12 || telemetry.driftAmount > 0.08);
 

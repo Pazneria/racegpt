@@ -21,6 +21,7 @@ export interface TrackSample {
   normal: Vector3;
   width: number;
   bank: number;
+  hasRoad: boolean;
 }
 
 export interface TrackContact {
@@ -28,6 +29,7 @@ export interface TrackContact {
   s: number;
   lateral: number;
   absLateral: number;
+  hasRoad: boolean;
   onRoad: boolean;
   onShoulder: boolean;
   surfacePoint: Vector3;
@@ -50,6 +52,13 @@ export interface TrackDefinition {
   tension: number;
   points: Vector3[];
   bankAt: (t: number) => number;
+  roadWidth?: number;
+  roadGaps?: readonly RoadGap[];
+}
+
+interface RoadGap {
+  startT: number;
+  endT: number;
 }
 
 const UP = new Vector3(0, 1, 0);
@@ -182,6 +191,43 @@ export const TRACK_DEFINITIONS: TrackDefinition[] = [
       new Vector3(1905, 0, 508)
     ], 0.72),
     bankAt: bankTestTrackC
+  },
+  {
+    id: "jump-speedcheck",
+    label: "Track 04",
+    name: "Test Track D",
+    menuDescription: "Ramp speedcheck - fast landing - two checkpoints",
+    sampleCount: 1520,
+    checkpointRatios: [0.34, 0.68],
+    finishPadding: 10,
+    tension: 0.28,
+    roadWidth: 48,
+    roadGaps: [{ startT: 0.225, endT: 0.262 }],
+    points: scaleTrackPoints([
+      new Vector3(0, 0, 0),
+      new Vector3(0, 0, 240),
+      new Vector3(16, 1, 470),
+      new Vector3(20, 6, 660),
+      new Vector3(20, 18, 812),
+      new Vector3(26, 34, 918),
+      new Vector3(34, 27, 1032),
+      new Vector3(82, 17, 1175),
+      new Vector3(214, 8, 1300),
+      new Vector3(410, 2, 1308),
+      new Vector3(610, 5, 1215),
+      new Vector3(770, 8, 1070),
+      new Vector3(822, 10, 876),
+      new Vector3(720, 9, 705),
+      new Vector3(535, 6, 620),
+      new Vector3(360, 4, 520),
+      new Vector3(420, 3, 340),
+      new Vector3(606, 2, 250),
+      new Vector3(824, 1, 330),
+      new Vector3(1048, 0, 394),
+      new Vector3(1248, 0, 468),
+      new Vector3(1460, 0, 520)
+    ], 0.78),
+    bankAt: bankTestTrackD
   }
 ];
 
@@ -198,12 +244,12 @@ export class Track {
   readonly label: string;
   readonly name: string;
   readonly menuDescription: string;
-  readonly roadWidth = 22;
+  readonly roadWidth: number;
   readonly shoulderWidth = 3.5;
   readonly curbWidth = 1.05;
-  readonly wallInnerOffset = this.roadWidth / 2 + this.curbWidth;
-  readonly wallOuterOffset = this.wallInnerOffset + 0.75;
-  readonly barrierOffset = (this.wallInnerOffset + this.wallOuterOffset) / 2;
+  readonly wallInnerOffset: number;
+  readonly wallOuterOffset: number;
+  readonly barrierOffset: number;
   readonly checkpointSs: readonly number[];
   readonly checkpointS: number;
   readonly finishS: number;
@@ -218,6 +264,10 @@ export class Track {
     this.label = this.definition.label;
     this.name = this.definition.name;
     this.menuDescription = this.definition.menuDescription;
+    this.roadWidth = this.definition.roadWidth ?? 22;
+    this.wallInnerOffset = this.roadWidth / 2 + this.curbWidth;
+    this.wallOuterOffset = this.wallInnerOffset + 0.75;
+    this.barrierOffset = (this.wallInnerOffset + this.wallOuterOffset) / 2;
     this.samples = this.buildSamples();
     this.length = this.samples[this.samples.length - 1].s;
     this.checkpointSs = this.definition.checkpointRatios.map((ratio) => this.length * ratio);
@@ -265,7 +315,8 @@ export class Track {
       side,
       normal,
       width: this.roadWidth,
-      bank: lerp(previous.bank, next.bank, blend)
+      bank: lerp(previous.bank, next.bank, blend),
+      hasRoad: previous.hasRoad && next.hasRoad
     };
   }
 
@@ -309,14 +360,16 @@ export class Track {
     const refinedLateral = refinedOffset.dot(refined.side);
     const absLateral = Math.abs(refinedLateral);
     const surfacePoint = this.getSurfacePoint(refined, refinedLateral);
+    const hasRoad = refined.hasRoad && this.hasRoadAt(refined.t);
 
     return {
       sample: refined,
       s,
       lateral: refinedLateral,
       absLateral,
-      onRoad: absLateral <= this.roadWidth / 2,
-      onShoulder: absLateral <= this.roadWidth / 2 + this.shoulderWidth,
+      hasRoad,
+      onRoad: hasRoad && absLateral <= this.roadWidth / 2,
+      onShoulder: hasRoad && absLateral <= this.roadWidth / 2 + this.shoulderWidth,
       surfacePoint
     };
   }
@@ -348,7 +401,7 @@ export class Track {
       vertices.push(left.x, left.y + 0.01, left.z, right.x, right.y + 0.01, right.z);
       uvs.push(0, sample.s / 18, 1, sample.s / 18);
 
-      if (index < this.samples.length - 1) {
+      if (index < this.samples.length - 1 && sample.hasRoad && this.samples[index + 1].hasRoad) {
         const base = index * 2;
         indices.push(base, base + 2, base + 1, base + 1, base + 2, base + 3);
       }
@@ -415,6 +468,7 @@ export class Track {
       const bankRotation = new Quaternion().setFromAxisAngle(tangent, bank);
       const side = baseSide.clone().applyQuaternion(bankRotation).normalize();
       const normal = new Vector3().crossVectors(tangent, side).normalize();
+      const hasRoad = this.hasRoadAt(t);
 
       return {
         index,
@@ -425,13 +479,18 @@ export class Track {
         side,
         normal,
         width: this.roadWidth,
-        bank
+        bank,
+        hasRoad
       };
     });
   }
 
   private bankAt(t: number): number {
     return this.definition.bankAt(t);
+  }
+
+  private hasRoadAt(t: number): boolean {
+    return !(this.definition.roadGaps ?? []).some((gap) => t >= gap.startT && t <= gap.endT);
   }
 
   private liftBankedPoint(point: Vector3, points: Vector3[], index: number): Vector3 {
@@ -476,4 +535,12 @@ function bankTestTrackC(t: number): number {
   const bankedBowl = smoothstep(0.46, 0.55, t) - smoothstep(0.67, 0.78, t);
   const downhillChicane = smoothstep(0.72, 0.78, t) - smoothstep(0.84, 0.91, t);
   return loadedBrakeRight * -0.1 + uphillEsses * 0.09 + bankedBowl * 0.19 + downhillChicane * -0.08;
+}
+
+function bankTestTrackD(t: number): number {
+  const rampSettle = smoothstep(0.23, 0.31, t) - smoothstep(0.36, 0.43, t);
+  const longRight = smoothstep(0.43, 0.51, t) - smoothstep(0.61, 0.69, t);
+  const ridgeLeft = smoothstep(0.60, 0.68, t) - smoothstep(0.76, 0.84, t);
+  const finalBend = smoothstep(0.78, 0.85, t) - smoothstep(0.92, 0.98, t);
+  return rampSettle * -0.05 + longRight * -0.15 + ridgeLeft * 0.13 + finalBend * -0.08;
 }

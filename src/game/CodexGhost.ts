@@ -25,9 +25,11 @@ const NEUTRAL_INPUT: InputSnapshot = {
 const INITIAL_TELEMETRY: CarTelemetry = {
   speedMps: 0,
   speedKmh: 0,
+  verticalSpeedMps: 0,
   driftAmount: 0,
   slipAmount: 0,
   onRoad: true,
+  airborne: false,
   barrierHit: false,
   engineLoad: 0,
   steerInput: 0,

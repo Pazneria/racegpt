@@ -117,6 +117,9 @@ export function getAutopilotInput(
   if (track.id === "technical-bowl") {
     return getTrackCInput(base, car, track, telemetry);
   }
+  if (track.id === "jump-speedcheck") {
+    return getTrackDInput(base, car, track, telemetry);
+  }
 
   const contact = car.getContact(track);
   const lookAhead = clamp(11.779 + telemetry.speedMps * 4.198, 14, 77.308);
@@ -271,4 +274,58 @@ function getTrackCDriver(s: number): (typeof TRACK_C_DRIVER)["sectors"]["start"]
     return TRACK_C_DRIVER.sectors.late;
   }
   return TRACK_C_DRIVER.sectors.finish;
+}
+
+function getTrackDInput(
+  base: InputSnapshot,
+  car: Car,
+  track: Track,
+  telemetry: CarTelemetry
+): InputSnapshot {
+  const contact = car.getContact(track);
+  const inSpeedcheck = contact.s < 1060;
+  const lookAhead = inSpeedcheck
+    ? clamp(58 + telemetry.speedMps * 0.45, 72, 112)
+    : clamp(22 + telemetry.speedMps * 1.05, 62, 126);
+  const target = track.getSampleAtS(contact.s + lookAhead);
+  const curveTarget = track.getSampleAtS(contact.s + (inSpeedcheck ? 92 : 176));
+  const currentYaw = Math.atan2(contact.sample.tangent.x, contact.sample.tangent.z);
+  const curveYaw = Math.atan2(curveTarget.tangent.x, curveTarget.tangent.z);
+  const curveDelta = shortestAngleDelta(currentYaw, curveYaw);
+  const turnSign = Math.sign(curveDelta);
+  const curveAmount = Math.min(1, Math.abs(curveDelta) / 1.45);
+  const targetLateral = 0;
+  const toTarget = target.center
+    .clone()
+    .addScaledVector(target.side, targetLateral)
+    .sub(car.position);
+  const desiredYaw = Math.atan2(toTarget.x, toTarget.z);
+  const headingError = shortestAngleDelta(car.yaw, desiredYaw);
+  const edgeBias = !inSpeedcheck && contact.absLateral > track.roadWidth / 2 - 5
+    ? (0 - contact.lateral) * 0.06
+    : 0;
+  const steer = clamp(
+    headingError * 6.05 +
+      (targetLateral - contact.lateral) * 0.11 +
+      turnSign * (inSpeedcheck ? -0.03 : -0.02) +
+      edgeBias,
+    -1,
+    1
+  );
+  const curveBrake =
+    !inSpeedcheck && telemetry.speedMps > 58 && curveAmount > 0.36 ? 0.64 * curveAmount : 0;
+  const edgeBrake =
+    !inSpeedcheck && contact.absLateral > track.roadWidth / 2 - 4 && telemetry.speedMps > 35 ? 0.58 : 0;
+  const brake = Math.max(curveBrake, edgeBrake);
+
+  return {
+    ...base,
+    steer,
+    throttle: 1,
+    brake,
+    checkpointResetPressed: false,
+    fullRestartPressed: false,
+    pausePressed: false,
+    confirmPressed: false
+  };
 }
