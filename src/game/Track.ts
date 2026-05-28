@@ -202,7 +202,7 @@ export const TRACK_DEFINITIONS: TrackDefinition[] = [
     finishPadding: 10,
     tension: 0.28,
     roadWidth: 48,
-    roadGaps: [{ startT: 0.225, endT: 0.255 }],
+    roadGaps: [{ startT: 0.225, endT: 0.248 }],
     points: scaleTrackPoints([
       new Vector3(0, 0, 0),
       new Vector3(0, 0, 240),

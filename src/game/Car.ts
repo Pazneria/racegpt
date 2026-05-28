@@ -36,7 +36,8 @@ const GRAVITY = 32;
 const TAKEOFF_CLEARANCE = 0.08;
 const TAKEOFF_VERTICAL_SPEED = 16;
 const LANDING_SURFACE_TOLERANCE = 0.25;
-const MAX_LANDING_SNAP_DISTANCE = 0.9;
+const MAX_LANDING_SNAP_DISTANCE = 1.6;
+const GROUND_Y = 0.04;
 const SHIFT_DURATION = 0.24;
 const UP_SHIFT_HOLD_SECONDS = 0.36;
 const DOWN_SHIFT_HOLD_SECONDS = 0.14;
@@ -121,7 +122,13 @@ export class Car {
   ): CarTelemetry {
     const contactBefore = track.getClosestContact(this.position, this.lastContact?.s);
     this.lastContact = contactBefore;
-    const tireContact = !this.airborne && contactBefore.hasRoad;
+    const roadYBefore = this.getRoadY(contactBefore);
+    const roadSupportedBefore =
+      contactBefore.hasRoad && Math.abs(this.position.y - roadYBefore) <= MAX_LANDING_SNAP_DISTANCE;
+    const groundSupportedBefore =
+      !this.airborne && this.position.y <= GROUND_Y + LANDING_SURFACE_TOLERANCE && !roadSupportedBefore;
+    const tireContact = !this.airborne && (roadSupportedBefore || groundSupportedBefore);
+    const tireOnRoad = tireContact && roadSupportedBefore && contactBefore.onRoad;
     const previousY = this.position.y;
 
     const throttle = controlsEnabled ? clamp(input.throttle, 0, 1) : 0;
@@ -176,11 +183,11 @@ export class Car {
 
     const verticalSpeed = this.velocity.y;
     const lateralGrip = tireContact ? lerp(11.5, 2.45, this.driftBlend) : 0.08;
-    const forwardGrip = tireContact ? (contactBefore.onRoad ? 0.16 : 1.4) : 0.02;
+    const forwardGrip = tireContact ? (tireOnRoad ? 0.16 : 1.4) : 0.02;
     localSideSpeed *= Math.exp(-lateralGrip * dt);
     let rebuiltForwardSpeed = forwardSpeed * Math.exp(-forwardGrip * dt * 0.08);
 
-    if (tireContact && !contactBefore.onRoad) {
+    if (tireContact && !tireOnRoad) {
       rebuiltForwardSpeed *= Math.exp(-0.42 * dt);
     }
 
@@ -203,11 +210,15 @@ export class Car {
     this.position.addScaledVector(this.velocity, dt);
 
     const contactAfter = track.getClosestContact(this.position, contactBefore.s);
-    const barrierHit = !this.airborne && contactAfter.hasRoad
+    const roadYAfter = this.getRoadY(contactAfter);
+    const roadSupportedAfter =
+      contactAfter.hasRoad && Math.abs(this.position.y - roadYAfter) <= MAX_LANDING_SNAP_DISTANCE;
+    const barrierHit = !this.airborne && roadSupportedAfter
       ? this.resolveBarrier(contactAfter, track.wallInnerOffset)
       : false;
     const grounded = track.getClosestContact(this.position, contactAfter.s);
-    const groundY = grounded.surfacePoint.y + grounded.sample.normal.y * RIDE_HEIGHT;
+    const groundY = this.getRoadY(grounded);
+    const roadSupported = grounded.hasRoad && Math.abs(this.position.y - groundY) <= MAX_LANDING_SNAP_DISTANCE;
 
     if (this.airborne) {
       const crossedRoadSurface =
@@ -224,10 +235,16 @@ export class Car {
         this.velocity.z *= 1 - landingLoss;
         this.velocity.y = 0;
         this.airborne = false;
+      } else if (this.position.y <= GROUND_Y && this.velocity.y <= 0) {
+        const groundImpact = -this.velocity.y;
+        this.position.y = GROUND_Y;
+        this.velocity.x *= 0.42;
+        this.velocity.z *= 0.42;
+        this.velocity.y = 0;
+        this.airborne = false;
+        if (groundImpact > 8) this.driftBlend = 0;
       }
-    } else if (!grounded.hasRoad) {
-      this.airborne = true;
-    } else {
+    } else if (roadSupported) {
       const airGap = this.position.y - groundY;
       const surfaceVelocity = (groundY - previousY) / dt;
       const roadFallingAway =
@@ -238,11 +255,17 @@ export class Car {
         this.position.y = groundY;
         this.velocity.y = clamp(surfaceVelocity, -28, 28);
       }
+    } else if (this.position.y <= GROUND_Y) {
+      this.position.y = GROUND_Y;
+      this.velocity.y = 0;
+    } else {
+      this.airborne = true;
     }
     this.lastContact = grounded;
 
     const newSpeed = Math.hypot(this.velocity.x, this.velocity.z);
     const slipAmount = clamp(Math.abs(localSideSpeed) / 9, 0, 1);
+    const onRoad = !this.airborne && roadSupported && grounded.onRoad;
 
     return {
       speedMps: newSpeed,
@@ -250,7 +273,7 @@ export class Car {
       verticalSpeedMps: this.velocity.y,
       driftAmount: this.driftBlend,
       slipAmount,
-      onRoad: !this.airborne && grounded.hasRoad && grounded.onRoad,
+      onRoad,
       airborne: this.airborne,
       barrierHit,
       engineLoad: Math.max(throttle * drivetrain.shiftPower, brake * 0.25, this.rpmNormalized * 0.35),
@@ -283,12 +306,24 @@ export class Car {
     }
 
     const contact = this.lastContact ?? track.getClosestContact(this.position);
+    const roadY = this.getRoadY(contact);
+    if (!contact.hasRoad || Math.abs(this.position.y - roadY) > MAX_LANDING_SNAP_DISTANCE) {
+      const up = WORLD_UP;
+      const forward = this.getForward();
+      const right = new Vector3().crossVectors(up, forward).normalize();
+      return { forward, right, up };
+    }
+
     const up = contact.sample.normal.clone().normalize();
     const flatForward = this.getForward();
     const forward = flatForward.addScaledVector(up, -flatForward.dot(up)).normalize();
     if (forward.lengthSq() < 0.001) forward.copy(contact.sample.tangent);
     const right = new Vector3().crossVectors(up, forward).normalize();
     return { forward, right, up };
+  }
+
+  private getRoadY(contact: TrackContact): number {
+    return contact.surfacePoint.y + contact.sample.normal.y * RIDE_HEIGHT;
   }
 
   private resolveBarrier(contact: TrackContact, wallInnerOffset: number): boolean {
