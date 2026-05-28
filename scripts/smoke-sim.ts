@@ -38,6 +38,8 @@ const dt = 1 / 120;
 let timeMs = 0;
 let lastS = track.startS;
 let checkpointMs: number | null = null;
+const checkpointMsList: number[] = [];
+let checkpointIndex = 0;
 
 for (let step = 0; step < 120 * 180; step += 1) {
   const input = getAutopilotInput(neutralInput, car, track, telemetry);
@@ -45,8 +47,11 @@ for (let step = 0; step < 120 * 180; step += 1) {
   timeMs += dt * 1000;
   const contact = car.getContact(track);
 
-  if (checkpointMs == null && lastS < track.checkpointS && contact.s >= track.checkpointS) {
+  const nextCheckpointS = track.checkpointSs[checkpointIndex];
+  if (nextCheckpointS != null && lastS < nextCheckpointS && contact.s >= nextCheckpointS) {
     checkpointMs = timeMs;
+    checkpointMsList[checkpointIndex] = timeMs;
+    checkpointIndex += 1;
   }
 
   if (lastS < track.finishS && contact.s >= track.finishS) {
@@ -57,6 +62,7 @@ for (let step = 0; step < 120 * 180; step += 1) {
           trackId: track.id,
           finishMs: Math.round(timeMs),
           checkpointMs: checkpointMs == null ? null : Math.round(checkpointMs),
+          checkpointMsList: checkpointMsList.map((splitMs) => Math.round(splitMs)),
           speedKmh: Math.round(telemetry.speedKmh),
           trackS: Math.round(contact.s)
         },
@@ -78,6 +84,7 @@ console.error(
       trackId: track.id,
       timeMs: Math.round(timeMs),
       checkpointMs: checkpointMs == null ? null : Math.round(checkpointMs),
+      checkpointMsList: checkpointMsList.map((splitMs) => Math.round(splitMs)),
       speedKmh: Math.round(telemetry.speedKmh),
       trackS: Math.round(contact.s),
       finishS: Math.round(track.finishS),

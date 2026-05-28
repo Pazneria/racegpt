@@ -18,6 +18,7 @@ export interface GhostRecording {
   trackId: string;
   timeMs: number;
   checkpointMs: number | null;
+  checkpointMsList?: number[];
   samples: GhostSample[];
 }
 

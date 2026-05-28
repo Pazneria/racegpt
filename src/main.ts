@@ -58,7 +58,8 @@ class RaceGptApp {
   private accumulator = 0;
   private runTimeMs = 0;
   private checkpointMs: number | null = null;
-  private passedCheckpoint = false;
+  private checkpointMsList: number[] = [];
+  private passedCheckpointCount = 0;
   private lastTrackS = 0;
   private countdownRemaining = 0;
   private countdownLastNumber = 0;
@@ -140,7 +141,8 @@ class RaceGptApp {
     this.mode = "countdown";
     this.runTimeMs = 0;
     this.checkpointMs = null;
-    this.passedCheckpoint = false;
+    this.checkpointMsList = [];
+    this.passedCheckpointCount = 0;
     this.countdownRemaining = 3;
     this.countdownLastNumber = 0;
     this.goFlashRemaining = 0;
@@ -396,15 +398,17 @@ class RaceGptApp {
 
   private checkTimingVolumes(): void {
     const contact = this.car.getContact(this.track);
+    const nextCheckpointS = this.track.checkpointSs[this.passedCheckpointCount];
     const crossedCheckpoint =
-      !this.passedCheckpoint &&
-      this.lastTrackS < this.track.checkpointS &&
-      contact.s >= this.track.checkpointS &&
+      nextCheckpointS != null &&
+      this.lastTrackS < nextCheckpointS &&
+      contact.s >= nextCheckpointS &&
       contact.absLateral <= this.track.roadWidth / 2 + 1.1;
 
     if (crossedCheckpoint) {
-      this.passedCheckpoint = true;
       this.checkpointMs = this.runTimeMs;
+      this.checkpointMsList[this.passedCheckpointCount] = this.runTimeMs;
+      this.passedCheckpointCount += 1;
       this.checkpointRestore = this.findRestoreSnapshot(this.runTimeMs - 500);
       this.audio.checkpoint();
     }
@@ -423,15 +427,17 @@ class RaceGptApp {
     const doublePress = now - this.lastCheckpointResetAt < 360;
     this.lastCheckpointResetAt = now;
 
-    if (doublePress && this.passedCheckpoint) {
-      const pose = this.track.getPoseAtS(this.track.checkpointS + 2.5);
+    if (doublePress && this.passedCheckpointCount > 0) {
+      const checkpointS = this.track.checkpointSs[this.passedCheckpointCount - 1] ?? this.track.checkpointS;
+      const pose = this.track.getPoseAtS(checkpointS + 2.5);
       this.car.resetTo(pose, this.runTimeMs);
     } else if (this.checkpointRestore) {
       this.car.applySnapshot(cloneSnapshot(this.checkpointRestore));
     } else {
       this.car.resetTo(this.track.startPose, this.runTimeMs);
-      this.passedCheckpoint = false;
+      this.passedCheckpointCount = 0;
       this.checkpointMs = null;
+      this.checkpointMsList = [];
     }
 
     this.controlLockRemaining = 0.18;
@@ -464,6 +470,7 @@ class RaceGptApp {
         trackId: this.track.id,
         timeMs: this.runTimeMs,
         checkpointMs: this.checkpointMs,
+        checkpointMsList: [...this.checkpointMsList],
         samples: this.currentRecording
       };
       saveBestRun(this.bestRun);
@@ -603,9 +610,11 @@ class RaceGptApp {
       trackName: this.track.name,
       runTimeMs: this.runTimeMs,
       checkpointMs: this.checkpointMs,
+      checkpointMsList: [...this.checkpointMsList],
       bestTimeMs: this.bestRun?.timeMs ?? null,
       trackS: contact.s,
       checkpointS: this.track.checkpointS,
+      checkpointSs: [...this.track.checkpointSs],
       finishS: this.track.finishS,
       speedKmh: this.telemetry.speedKmh,
       gear: this.telemetry.gear,
@@ -615,7 +624,8 @@ class RaceGptApp {
       y: this.car.position.y,
       z: this.car.position.z,
       yaw: this.car.yaw,
-      passedCheckpoint: this.passedCheckpoint,
+      passedCheckpoint: this.passedCheckpointCount > 0,
+      passedCheckpointCount: this.passedCheckpointCount,
       autoplay: this.autoplay,
       input: {
         source: this.inputSource,
@@ -662,9 +672,11 @@ type RaceGptDebugState = {
   trackName: string;
   runTimeMs: number;
   checkpointMs: number | null;
+  checkpointMsList: number[];
   bestTimeMs: number | null;
   trackS: number;
   checkpointS: number;
+  checkpointSs: number[];
   finishS: number;
   speedKmh: number;
   gear: number;
@@ -675,6 +687,7 @@ type RaceGptDebugState = {
   z: number;
   yaw: number;
   passedCheckpoint: boolean;
+  passedCheckpointCount: number;
   autoplay: boolean;
   input: {
     source: string;

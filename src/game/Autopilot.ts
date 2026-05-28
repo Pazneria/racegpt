@@ -21,6 +21,24 @@ const TRACK_B_DRIVER = {
   brakeCurve: 0.9063966620147228
 };
 
+const TRACK_C_DRIVER = {
+  lookBase: 11.779,
+  lookScale: 4.198,
+  lookMin: 14,
+  lookMax: 77.308,
+  curveLook: 190.071,
+  steerGain: 4.607,
+  lateralGain: 0.0382,
+  feedForward: -0.1757,
+  baseLateral: 0,
+  turnLateral: -1.694,
+  curveLateral: 0,
+  throttle: 1,
+  brakeSpeed: 72,
+  brakeAmount: 0.08,
+  brakeCurve: 0.48
+};
+
 export function getAutopilotInput(
   base: InputSnapshot,
   car: Car,
@@ -29,6 +47,9 @@ export function getAutopilotInput(
 ): InputSnapshot {
   if (track.id === "test-track-b") {
     return getTrackBInput(base, car, track, telemetry);
+  }
+  if (track.id === "technical-bowl") {
+    return getTrackCInput(base, car, track, telemetry);
   }
 
   const contact = car.getContact(track);
@@ -110,6 +131,61 @@ function getTrackBInput(
     ...base,
     steer,
     throttle: TRACK_B_DRIVER.throttle,
+    brake,
+    checkpointResetPressed: false,
+    fullRestartPressed: false,
+    pausePressed: false,
+    confirmPressed: false
+  };
+}
+
+function getTrackCInput(
+  base: InputSnapshot,
+  car: Car,
+  track: Track,
+  telemetry: CarTelemetry
+): InputSnapshot {
+  const contact = car.getContact(track);
+  const lookAhead = clamp(
+    TRACK_C_DRIVER.lookBase + telemetry.speedMps * TRACK_C_DRIVER.lookScale,
+    TRACK_C_DRIVER.lookMin,
+    TRACK_C_DRIVER.lookMax
+  );
+  const target = track.getSampleAtS(contact.s + lookAhead);
+  const curveTarget = track.getSampleAtS(contact.s + TRACK_C_DRIVER.curveLook);
+  const currentYaw = Math.atan2(contact.sample.tangent.x, contact.sample.tangent.z);
+  const curveYaw = Math.atan2(curveTarget.tangent.x, curveTarget.tangent.z);
+  const curveDelta = shortestAngleDelta(currentYaw, curveYaw);
+  const turnSign = Math.sign(curveDelta);
+  const curveAmount = Math.min(1, Math.abs(curveDelta) / 1.05);
+  const targetLateral = clamp(
+    TRACK_C_DRIVER.baseLateral +
+      turnSign * (TRACK_C_DRIVER.turnLateral + TRACK_C_DRIVER.curveLateral * curveAmount),
+    -8.4,
+    8.4
+  );
+  const toTarget = target.center
+    .clone()
+    .addScaledVector(target.side, targetLateral)
+    .sub(car.position);
+  const desiredYaw = Math.atan2(toTarget.x, toTarget.z);
+  const headingError = shortestAngleDelta(car.yaw, desiredYaw);
+  const steer = clamp(
+    headingError * TRACK_C_DRIVER.steerGain +
+      (targetLateral - contact.lateral) * TRACK_C_DRIVER.lateralGain +
+      turnSign * TRACK_C_DRIVER.feedForward,
+    -1,
+    1
+  );
+  const brake =
+    telemetry.speedMps > TRACK_C_DRIVER.brakeSpeed && curveAmount > TRACK_C_DRIVER.brakeCurve
+      ? TRACK_C_DRIVER.brakeAmount * curveAmount
+      : 0;
+
+  return {
+    ...base,
+    steer,
+    throttle: TRACK_C_DRIVER.throttle,
     brake,
     checkpointResetPressed: false,
     fullRestartPressed: false,

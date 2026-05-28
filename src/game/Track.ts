@@ -45,7 +45,7 @@ export interface TrackDefinition {
   name: string;
   menuDescription: string;
   sampleCount: number;
-  checkpointRatio: number;
+  checkpointRatios: readonly number[];
   finishPadding: number;
   tension: number;
   points: Vector3[];
@@ -62,7 +62,7 @@ export const TRACK_DEFINITIONS: TrackDefinition[] = [
     name: "Test Track A",
     menuDescription: "30-60 sec target - model ghost - checkpoint split",
     sampleCount: 640,
-    checkpointRatio: 0.46,
+    checkpointRatios: [0.46],
     finishPadding: 7,
     tension: 0.35,
     points: [
@@ -96,7 +96,7 @@ export const TRACK_DEFINITIONS: TrackDefinition[] = [
     name: "Test Track B",
     menuDescription: "Long route - model ghost - higher speed",
     sampleCount: 1280,
-    checkpointRatio: 0.5,
+    checkpointRatios: [0.5],
     finishPadding: 8,
     tension: 0.32,
     points: scaleTrackPoints([
@@ -141,6 +141,47 @@ export const TRACK_DEFINITIONS: TrackDefinition[] = [
       new Vector3(2028, 0, 514)
     ], 0.52),
     bankAt: bankTestTrackB
+  },
+  {
+    id: "technical-bowl",
+    label: "Track 03",
+    name: "Test Track C",
+    menuDescription: "Technical speed control - two checkpoints - banked bowl",
+    sampleCount: 1440,
+    checkpointRatios: [0.35, 0.72],
+    finishPadding: 9,
+    tension: 0.3,
+    points: scaleTrackPoints([
+      new Vector3(0, 0, 0),
+      new Vector3(0, 0, 210),
+      new Vector3(42, 0, 365),
+      new Vector3(-24, 0, 515),
+      new Vector3(48, 1, 660),
+      new Vector3(190, 4, 795),
+      new Vector3(390, 8, 780),
+      new Vector3(560, 13, 645),
+      new Vector3(632, 17, 450),
+      new Vector3(555, 20, 262),
+      new Vector3(696, 23, 112),
+      new Vector3(875, 25, 225),
+      new Vector3(1068, 26, 82),
+      new Vector3(1235, 25, -92),
+      new Vector3(1316, 24, -332),
+      new Vector3(1198, 22, -585),
+      new Vector3(934, 20, -716),
+      new Vector3(632, 18, -638),
+      new Vector3(460, 15, -430),
+      new Vector3(470, 12, -180),
+      new Vector3(610, 9, 30),
+      new Vector3(790, 6, -28),
+      new Vector3(945, 3, 160),
+      new Vector3(1130, 1, 132),
+      new Vector3(1320, 0, 255),
+      new Vector3(1515, 0, 410),
+      new Vector3(1710, 0, 350),
+      new Vector3(1905, 0, 508)
+    ], 0.72),
+    bankAt: bankTestTrackC
   }
 ];
 
@@ -163,6 +204,7 @@ export class Track {
   readonly wallInnerOffset = this.roadWidth / 2 + this.curbWidth;
   readonly wallOuterOffset = this.wallInnerOffset + 0.75;
   readonly barrierOffset = (this.wallInnerOffset + this.wallOuterOffset) / 2;
+  readonly checkpointSs: readonly number[];
   readonly checkpointS: number;
   readonly finishS: number;
   readonly startS = 5;
@@ -178,7 +220,8 @@ export class Track {
     this.menuDescription = this.definition.menuDescription;
     this.samples = this.buildSamples();
     this.length = this.samples[this.samples.length - 1].s;
-    this.checkpointS = this.length * this.definition.checkpointRatio;
+    this.checkpointSs = this.definition.checkpointRatios.map((ratio) => this.length * ratio);
+    this.checkpointS = this.checkpointSs[0] ?? this.length * 0.5;
     this.finishS = this.length - this.definition.finishPadding;
   }
 
@@ -425,4 +468,12 @@ function bankTestTrackB(t: number): number {
   const returnClimb = smoothstep(0.50, 0.58, t) - smoothstep(0.64, 0.72, t);
   const finalBend = smoothstep(0.74, 0.82, t) - smoothstep(0.90, 0.97, t);
   return opener * 0.08 + ridgeSweeper * -0.14 + returnClimb * 0.12 + finalBend * -0.1;
+}
+
+function bankTestTrackC(t: number): number {
+  const loadedBrakeRight = smoothstep(0.12, 0.2, t) - smoothstep(0.27, 0.36, t);
+  const uphillEsses = smoothstep(0.31, 0.39, t) - smoothstep(0.47, 0.55, t);
+  const bankedBowl = smoothstep(0.46, 0.55, t) - smoothstep(0.67, 0.78, t);
+  const downhillChicane = smoothstep(0.72, 0.78, t) - smoothstep(0.84, 0.91, t);
+  return loadedBrakeRight * -0.1 + uphillEsses * 0.09 + bankedBowl * 0.19 + downhillChicane * -0.08;
 }

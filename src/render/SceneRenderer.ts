@@ -154,18 +154,22 @@ export class SceneRenderer {
   }
 
   private addWorld(): void {
+    const bounds = this.getTrackBounds();
+    const groundSize = Math.max(bounds.width, bounds.depth) + 260;
     const ground = new Mesh(
-      new PlaneGeometry(1100, 1100, 1, 1),
+      new PlaneGeometry(groundSize, groundSize, 1, 1),
       new MeshStandardMaterial({ color: 0x51614d, roughness: 0.95, metalness: 0 })
     );
     ground.rotation.x = -Math.PI / 2;
-    ground.position.set(190, -0.08, -30);
+    ground.position.set(bounds.centerX, -0.08, bounds.centerZ);
     ground.receiveShadow = true;
     this.scene.add(ground);
 
     this.scene.add(this.track.createRoadMesh());
     this.scene.add(this.track.createPaintedLine(this.track.startS + 1, 0xf3f5f7, 2.6));
-    this.scene.add(this.track.createPaintedLine(this.track.checkpointS, 0xf5c542, 3.6));
+    for (const checkpointS of this.track.checkpointSs) {
+      this.scene.add(this.track.createPaintedLine(checkpointS, 0xf5c542, 3.6));
+    }
     this.scene.add(this.track.createPaintedLine(this.track.finishS, 0xf3f5f7, 3.2));
 
     this.addRumbleCurbs();
@@ -173,6 +177,25 @@ export class SceneRenderer {
     this.addBridgeStructure();
     this.addBarriers();
     this.addIndustrialScenery();
+  }
+
+  private getTrackBounds(): { centerX: number; centerZ: number; width: number; depth: number } {
+    let minX = Number.POSITIVE_INFINITY;
+    let maxX = Number.NEGATIVE_INFINITY;
+    let minZ = Number.POSITIVE_INFINITY;
+    let maxZ = Number.NEGATIVE_INFINITY;
+    for (const sample of this.track.samples) {
+      minX = Math.min(minX, sample.center.x);
+      maxX = Math.max(maxX, sample.center.x);
+      minZ = Math.min(minZ, sample.center.z);
+      maxZ = Math.max(maxZ, sample.center.z);
+    }
+    return {
+      centerX: (minX + maxX) / 2,
+      centerZ: (minZ + maxZ) / 2,
+      width: maxX - minX,
+      depth: maxZ - minZ
+    };
   }
 
   private addRumbleCurbs(): void {
@@ -208,7 +231,6 @@ export class SceneRenderer {
   }
 
   private addCheckpointArch(): void {
-    const sample = this.track.getSampleAtS(this.track.checkpointS);
     const paintMaterial = new MeshStandardMaterial({
       color: 0xf0c84b,
       roughness: 0.48,
@@ -219,34 +241,38 @@ export class SceneRenderer {
       roughness: 0.62,
       metalness: 0.22
     });
-    const basis = new Matrix4().makeBasis(sample.side, sample.normal, sample.tangent);
     const height = 8.2;
     const postOffset = this.track.wallOuterOffset + 0.6;
 
-    for (const sign of [-1, 1]) {
-      const post = new Mesh(new BoxGeometry(0.38, height, 0.46), paintMaterial);
-      post.quaternion.setFromRotationMatrix(basis);
-      post.position
-        .copy(sample.center)
-        .addScaledVector(sample.side, sign * postOffset)
-        .addScaledVector(sample.normal, height / 2);
-      post.castShadow = true;
-      post.receiveShadow = true;
-      this.scene.add(post);
+    for (const checkpointS of this.track.checkpointSs) {
+      const sample = this.track.getSampleAtS(checkpointS);
+      const basis = new Matrix4().makeBasis(sample.side, sample.normal, sample.tangent);
+
+      for (const sign of [-1, 1]) {
+        const post = new Mesh(new BoxGeometry(0.38, height, 0.46), paintMaterial);
+        post.quaternion.setFromRotationMatrix(basis);
+        post.position
+          .copy(sample.center)
+          .addScaledVector(sample.side, sign * postOffset)
+          .addScaledVector(sample.normal, height / 2);
+        post.castShadow = true;
+        post.receiveShadow = true;
+        this.scene.add(post);
+      }
+
+      const beam = new Mesh(new BoxGeometry(postOffset * 2 + 0.65, 0.44, 0.58), paintMaterial);
+      beam.quaternion.setFromRotationMatrix(basis);
+      beam.position.copy(sample.center).addScaledVector(sample.normal, height);
+      beam.castShadow = true;
+      beam.receiveShadow = true;
+      this.scene.add(beam);
+
+      const cross = new Mesh(new BoxGeometry(postOffset * 2, 0.16, 0.2), darkMaterial);
+      cross.quaternion.setFromRotationMatrix(basis);
+      cross.position.copy(sample.center).addScaledVector(sample.normal, height - 1.2);
+      cross.castShadow = true;
+      this.scene.add(cross);
     }
-
-    const beam = new Mesh(new BoxGeometry(postOffset * 2 + 0.65, 0.44, 0.58), paintMaterial);
-    beam.quaternion.setFromRotationMatrix(basis);
-    beam.position.copy(sample.center).addScaledVector(sample.normal, height);
-    beam.castShadow = true;
-    beam.receiveShadow = true;
-    this.scene.add(beam);
-
-    const cross = new Mesh(new BoxGeometry(postOffset * 2, 0.16, 0.2), darkMaterial);
-    cross.quaternion.setFromRotationMatrix(basis);
-    cross.position.copy(sample.center).addScaledVector(sample.normal, height - 1.2);
-    cross.castShadow = true;
-    this.scene.add(cross);
   }
 
   private addBridgeStructure(): void {
