@@ -35,6 +35,8 @@ const COLLISION_HALF_WIDTH = 1.42;
 const GRAVITY = 32;
 const TAKEOFF_CLEARANCE = 0.08;
 const TAKEOFF_VERTICAL_SPEED = 16;
+const LANDING_SURFACE_TOLERANCE = 0.25;
+const MAX_LANDING_SNAP_DISTANCE = 0.9;
 const SHIFT_DURATION = 0.24;
 const UP_SHIFT_HOLD_SECONDS = 0.36;
 const DOWN_SHIFT_HOLD_SECONDS = 0.14;
@@ -201,12 +203,20 @@ export class Car {
     this.position.addScaledVector(this.velocity, dt);
 
     const contactAfter = track.getClosestContact(this.position, contactBefore.s);
-    const barrierHit = contactAfter.hasRoad ? this.resolveBarrier(contactAfter, track.wallInnerOffset) : false;
+    const barrierHit = !this.airborne && contactAfter.hasRoad
+      ? this.resolveBarrier(contactAfter, track.wallInnerOffset)
+      : false;
     const grounded = track.getClosestContact(this.position, contactAfter.s);
     const groundY = grounded.surfacePoint.y + grounded.sample.normal.y * RIDE_HEIGHT;
 
     if (this.airborne) {
-      if (grounded.hasRoad && this.position.y <= groundY && this.velocity.y <= 0) {
+      const crossedRoadSurface =
+        previousY >= groundY - LANDING_SURFACE_TOLERANCE &&
+        this.position.y <= groundY + LANDING_SURFACE_TOLERANCE;
+      const snapDistance = groundY - this.position.y;
+      const closeEnoughToLand =
+        snapDistance >= -LANDING_SURFACE_TOLERANCE && snapDistance <= MAX_LANDING_SNAP_DISTANCE;
+      if (grounded.hasRoad && crossedRoadSurface && closeEnoughToLand && this.velocity.y <= 0) {
         const landingImpact = -this.velocity.y;
         const landingLoss = clamp((landingImpact - 4) / 34, 0, 0.24);
         this.position.y = groundY;
