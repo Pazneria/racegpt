@@ -32,6 +32,7 @@ jobs:
 
       - name: Verify
         run: |
+          npm test
           npm run smoke:sim
           npm run build
 

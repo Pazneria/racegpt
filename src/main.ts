@@ -1,11 +1,11 @@
-import "./style.css";
 import { AudioManager } from "./audio/AudioManager";
 import { formatTime } from "./core/math";
 import type { InputSnapshot } from "./input/InputManager";
 import { InputManager } from "./input/InputManager";
 import { Car, type CarSnapshot, type CarTelemetry } from "./game/Car";
 import { CODEX_GHOST_NAME, createCodexGhostRecording } from "./game/CodexGhost";
-import { getAutopilotInput } from "./game/Autopilot";
+import { getAutopilotInput, resetAutopilotState } from "./game/Autopilot";
+import { getAutoplayReplayTimeMs } from "./game/PbReplay";
 import {
   loadBestRun,
   loadSettings,
@@ -24,7 +24,7 @@ type GameMode = "menu" | "countdown" | "running" | "paused" | "finished" | "sett
 const FIXED_DT = 1 / 120;
 const MAX_STEPS = 6;
 
-class RaceGptApp {
+export class RaceGptApp {
   private readonly track: Track;
   private readonly codexGhost: GhostRecording;
   private readonly car = new Car();
@@ -34,27 +34,14 @@ class RaceGptApp {
   private readonly ui: UI;
   private readonly urlParams = new URLSearchParams(window.location.search);
   private readonly autoplay = this.urlParams.has("autoplay");
+  private readonly autopilotVariant = this.urlParams.get("driver") ?? "codex";
   private readonly muted = this.urlParams.has("muted");
 
   private settings: GameSettings = loadSettings();
   private bestRun: GhostRecording | null = null;
   private mode: GameMode = "menu";
   private settingsReturnMode: GameMode = "menu";
-  private telemetry: CarTelemetry = {
-    speedMps: 0,
-    speedKmh: 0,
-    verticalSpeedMps: 0,
-    driftAmount: 0,
-    slipAmount: 0,
-    onRoad: true,
-    airborne: false,
-    barrierHit: false,
-    engineLoad: 0,
-    steerInput: 0,
-    gear: 1,
-    rpmNormalized: 0.24,
-    shiftPulse: 0
-  };
+  private telemetry: CarTelemetry = initialTelemetry();
 
   private lastFrame = performance.now();
   private accumulator = 0;
@@ -93,13 +80,11 @@ class RaceGptApp {
     }
     this.bestRun = loadBestRun(this.track.id);
     this.codexGhost = createCodexGhostRecording(this.track);
-    this.renderer = new SceneRenderer(canvas, this.track, [
-      {
-        rank: 1,
-        name: CODEX_GHOST_NAME,
-        timeMs: this.codexGhost.timeMs
-      }
-    ]);
+    this.renderer = new SceneRenderer(
+      canvas,
+      this.track,
+      [{ rank: 1, name: CODEX_GHOST_NAME, timeMs: this.codexGhost.timeMs }]
+    );
     this.ui = new UI({
       startRun: () => this.startRunFromGesture(),
       resume: () => this.resumeFromPause(),
@@ -154,6 +139,9 @@ class RaceGptApp {
     this.currentRecording = [];
     this.recordAccumulator = 0;
     this.car.resetTo(this.track.startPose, 0);
+    this.telemetry = initialTelemetry();
+    resetAutopilotState(this.car);
+    this.displayInput = neutralInput();
     this.lastTrackS = this.track.startS;
     this.ui.showGame();
     this.ui.setCountdown("3");
@@ -272,13 +260,13 @@ class RaceGptApp {
     this.accumulator += rawDt;
 
     const rawInput = this.input.snapshot();
-    const frameInput = this.autoplay ? this.getAutopilotInput(rawInput) : rawInput;
+    const frameInput = this.autoplay ? this.displayInput : rawInput;
     this.displayInput = frameInput;
     this.inputSource = this.getInputSource(rawInput);
     if (this.autoplay && this.mode === "menu") {
       this.beginCountdown();
     }
-    this.handleModeInput(frameInput);
+    this.handleModeInput(rawInput);
 
     let steps = 0;
     while (this.accumulator >= FIXED_DT && steps < MAX_STEPS) {
@@ -333,8 +321,8 @@ class RaceGptApp {
   }
 
   private fixedStep(baseInput: InputSnapshot, dt: number): void {
-    const input = this.autoplay ? this.getAutopilotInput(baseInput) : baseInput;
-    this.displayInput = input;
+    // Stateful drivers advance only with running physics, never with rendering.
+    let input = baseInput;
 
     if (this.mode === "menu" || this.mode === "settings" || this.mode === "finished") {
       this.telemetry = this.car.update(input, this.track, dt, false);
@@ -348,11 +336,16 @@ class RaceGptApp {
 
     if (this.mode === "countdown") {
       this.updateCountdown(dt);
-      this.telemetry = this.car.update(input, this.track, dt, false);
+      if (this.mode === "countdown") {
+        this.telemetry = this.car.update(input, this.track, dt, false);
+      }
       return;
     }
 
     if (this.mode !== "running") return;
+
+    input = this.autoplay ? this.getAutopilotInput(baseInput) : baseInput;
+    this.displayInput = input;
 
     if (input.checkpointResetPressed) {
       this.resetToCheckpoint();
@@ -380,6 +373,10 @@ class RaceGptApp {
     }
 
     if (this.countdownRemaining <= 0) {
+      this.car.resetTo(this.track.startPose, 0);
+      this.telemetry = initialTelemetry();
+      resetAutopilotState(this.car);
+      this.lastTrackS = this.track.startS;
       this.mode = "running";
       this.ui.setCountdown("GO");
       this.goFlashRemaining = 0.45;
@@ -520,6 +517,14 @@ class RaceGptApp {
     beatenModelDelta: number | null
   ): string {
     if (!isPlayerRun) {
+      const replayTimeMs = getAutoplayReplayTimeMs(
+        this.track.id,
+        this.autopilotVariant,
+        this.autoplay
+      );
+      if (replayTimeMs != null) {
+        return `PB replay complete. Time: ${formatTime(Math.round(this.runTimeMs))}.`;
+      }
       return `${CODEX_GHOST_NAME} replay complete. Benchmark time: ${formatTime(this.codexGhost.timeMs)}.`;
     }
 
@@ -604,7 +609,7 @@ class RaceGptApp {
   private getAutopilotInput(base: InputSnapshot): InputSnapshot {
     if (this.mode !== "running" && this.mode !== "countdown") return base;
 
-    return getAutopilotInput(base, this.car, this.track, this.telemetry);
+    return getAutopilotInput(base, this.car, this.track, this.telemetry, this.autopilotVariant);
   }
 
   private publishDebugState(): void {
@@ -658,6 +663,24 @@ function cloneSnapshot(snapshot: CarSnapshot): CarSnapshot {
   };
 }
 
+function initialTelemetry(): CarTelemetry {
+  return {
+    speedMps: 0,
+    speedKmh: 0,
+    verticalSpeedMps: 0,
+    driftAmount: 0,
+    slipAmount: 0,
+    onRoad: true,
+    airborne: false,
+    barrierHit: false,
+    engineLoad: 0,
+    steerInput: 0,
+    gear: 1,
+    rpmNormalized: 0.24,
+    shiftPulse: 0
+  };
+}
+
 function neutralInput(): InputSnapshot {
   return {
     steer: 0,
@@ -671,8 +694,6 @@ function neutralInput(): InputSnapshot {
     anyGamepad: false
   };
 }
-
-new RaceGptApp();
 
 type RaceGptDebugState = {
   mode: GameMode;

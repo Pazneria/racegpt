@@ -40,6 +40,8 @@ first playable version tunable without waiting on a full vehicle physics stack.
 ## Verification
 
 ```powershell
+npm.cmd test
+npm.cmd run typecheck
 npm.cmd run smoke:sim
 npm.cmd run build
 npm.cmd audit
@@ -47,6 +49,10 @@ npm.cmd audit
 
 `smoke:sim` runs the same car and track simulation with a deterministic driver to prove
 the first track can be completed and the checkpoint can be crossed.
+
+`npm test` covers all advertised PB driver variants, timing gates, countdown and
+restart state, frame-rate-independent autoplay, and player-record isolation.
+GitHub runs these checks on pull requests and before deploying from `main`.
 
 ## Deploy
 

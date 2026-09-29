@@ -9,6 +9,11 @@
     "build": "tsc && vite build",
     "preview": "vite preview --host 127.0.0.1",
     "smoke:sim": "tsx scripts/smoke-sim.ts",
+    "test:car-physics": "tsx scripts/car-physics-tests.ts",
+    "test:drivers": "tsx scripts/driver-variant-tests.ts",
+    "test:runtime": "tsx scripts/runtime-tests.ts",
+    "test:pb-replay": "tsx scripts/pb-replay-tests.ts",
+    "test": "npm run test:car-physics && npm run test:drivers && npm run test:pb-replay && npm run test:runtime",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
