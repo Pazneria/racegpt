@@ -54,6 +54,12 @@ the first track can be completed and the checkpoint can be crossed.
 restart state, frame-rate-independent autoplay, and player-record isolation.
 GitHub runs these checks on pull requests and before deploying from `main`.
 
+The billboard lists each model's PB on the selected track. The Codex ghost and
+player finish comparison use that same recorded run. On technical-bowl and
+jump-speedcheck, autoplay defaults to the fastest registered PB driver. Older PB
+variants remain available through `?autoplay&track=jump-speedcheck&driver=search-37275`.
+Replay finish text reports the measured elapsed time.
+
 ## Deploy
 
 The GitHub Pages workflow builds and deploys `dist` from `main`. Once this repository

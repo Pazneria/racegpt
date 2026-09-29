@@ -5,7 +5,7 @@ import { InputManager } from "./input/InputManager";
 import { Car, type CarSnapshot, type CarTelemetry } from "./game/Car";
 import { CODEX_GHOST_NAME, createCodexGhostRecording } from "./game/CodexGhost";
 import { getAutopilotInput, resetAutopilotState } from "./game/Autopilot";
-import { getAutoplayReplayTimeMs } from "./game/PbReplay";
+import { getCurrentPbDriver } from "./game/PbReplay";
 import {
   loadBestRun,
   loadSettings,
@@ -34,7 +34,7 @@ export class RaceGptApp {
   private readonly ui: UI;
   private readonly urlParams = new URLSearchParams(window.location.search);
   private readonly autoplay = this.urlParams.has("autoplay");
-  private readonly autopilotVariant = this.urlParams.get("driver") ?? "codex";
+  private readonly autopilotVariant: string;
   private readonly muted = this.urlParams.has("muted");
 
   private settings: GameSettings = loadSettings();
@@ -70,6 +70,7 @@ export class RaceGptApp {
     }
 
     this.track = new Track(this.urlParams.get("track") ?? this.settings.selectedTrackId);
+    this.autopilotVariant = this.urlParams.get("driver") ?? getCurrentPbDriver(this.track.id) ?? "codex";
     if (this.urlParams.get("inputOverlay") === "1" && !this.settings.inputOverlayEnabled) {
       this.settings = { ...this.settings, inputOverlayEnabled: true };
       saveSettings(this.settings);
@@ -459,6 +460,7 @@ export class RaceGptApp {
   private finishRun(): void {
     if (this.mode !== "running") return;
     this.mode = "finished";
+    this.runTimeMs = Math.round(this.runTimeMs);
     this.currentRecording.push(this.toGhostSample(this.runTimeMs));
     const previousBest = this.bestRun?.timeMs ?? null;
     const isPlayerRun = !this.autoplay;
@@ -517,25 +519,17 @@ export class RaceGptApp {
     beatenModelDelta: number | null
   ): string {
     if (!isPlayerRun) {
-      const replayTimeMs = getAutoplayReplayTimeMs(
-        this.track.id,
-        this.autopilotVariant,
-        this.autoplay
-      );
-      if (replayTimeMs != null) {
-        return `PB replay complete. Time: ${formatTime(Math.round(this.runTimeMs))}.`;
-      }
-      return `${CODEX_GHOST_NAME} replay complete. Benchmark time: ${formatTime(this.codexGhost.timeMs)}.`;
+      return `${CODEX_GHOST_NAME} replay complete. Time: ${formatTime(Math.round(this.runTimeMs))}.`;
     }
 
     if (beatenModelDelta != null) {
       const bestPrefix = isBest ? "New local best saved. " : "";
-      return `${bestPrefix}You beat ${CODEX_GHOST_NAME} by ${formatTime(beatenModelDelta)}.`;
+      return `${bestPrefix}You beat ${CODEX_GHOST_NAME}'s PB by ${formatTime(beatenModelDelta)}.`;
     }
 
     if (isBest) return "New local best saved.";
     if (previousBest != null) return `Run complete. Best remains ${formatTime(previousBest)}.`;
-    return `Run complete. ${CODEX_GHOST_NAME} benchmark: ${formatTime(this.codexGhost.timeMs)}.`;
+    return `Run complete. ${CODEX_GHOST_NAME} PB: ${formatTime(this.codexGhost.timeMs)}.`;
   }
 
   private getGhostSample(recording: GhostRecording | null): GhostSample | null {
