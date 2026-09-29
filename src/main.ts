@@ -1,12 +1,11 @@
-import "./style.css";
 import { AudioManager } from "./audio/AudioManager";
 import { formatTime } from "./core/math";
 import type { InputSnapshot } from "./input/InputManager";
 import { InputManager } from "./input/InputManager";
 import { Car, type CarSnapshot, type CarTelemetry } from "./game/Car";
 import { CODEX_GHOST_NAME, createCodexGhostRecording } from "./game/CodexGhost";
-import { getAutopilotInput } from "./game/Autopilot";
-import { getAutoplayReplayTimeMs, getBillboardEntriesForTrack } from "./game/PbReplay";
+import { getAutopilotInput, resetAutopilotState } from "./game/Autopilot";
+import { getAutoplayReplayTimeMs } from "./game/PbReplay";
 import {
   loadBestRun,
   loadSettings,
@@ -25,7 +24,7 @@ type GameMode = "menu" | "countdown" | "running" | "paused" | "finished" | "sett
 const FIXED_DT = 1 / 120;
 const MAX_STEPS = 6;
 
-class RaceGptApp {
+export class RaceGptApp {
   private readonly track: Track;
   private readonly codexGhost: GhostRecording;
   private readonly car = new Car();
@@ -84,7 +83,7 @@ class RaceGptApp {
     this.renderer = new SceneRenderer(
       canvas,
       this.track,
-      getBillboardEntriesForTrack(this.track.id, CODEX_GHOST_NAME, this.codexGhost.timeMs)
+      [{ rank: 1, name: CODEX_GHOST_NAME, timeMs: this.codexGhost.timeMs }]
     );
     this.ui = new UI({
       startRun: () => this.startRunFromGesture(),
@@ -141,6 +140,8 @@ class RaceGptApp {
     this.recordAccumulator = 0;
     this.car.resetTo(this.track.startPose, 0);
     this.telemetry = initialTelemetry();
+    resetAutopilotState(this.car);
+    this.displayInput = neutralInput();
     this.lastTrackS = this.track.startS;
     this.ui.showGame();
     this.ui.setCountdown("3");
@@ -259,13 +260,13 @@ class RaceGptApp {
     this.accumulator += rawDt;
 
     const rawInput = this.input.snapshot();
-    const frameInput = this.autoplay ? this.getAutopilotInput(rawInput) : rawInput;
+    const frameInput = this.autoplay ? this.displayInput : rawInput;
     this.displayInput = frameInput;
     this.inputSource = this.getInputSource(rawInput);
     if (this.autoplay && this.mode === "menu") {
       this.beginCountdown();
     }
-    this.handleModeInput(frameInput);
+    this.handleModeInput(rawInput);
 
     let steps = 0;
     while (this.accumulator >= FIXED_DT && steps < MAX_STEPS) {
@@ -320,8 +321,8 @@ class RaceGptApp {
   }
 
   private fixedStep(baseInput: InputSnapshot, dt: number): void {
-    const input = this.autoplay ? this.getAutopilotInput(baseInput) : baseInput;
-    this.displayInput = input;
+    // Stateful drivers advance only with running physics, never with rendering.
+    let input = baseInput;
 
     if (this.mode === "menu" || this.mode === "settings" || this.mode === "finished") {
       this.telemetry = this.car.update(input, this.track, dt, false);
@@ -342,6 +343,9 @@ class RaceGptApp {
     }
 
     if (this.mode !== "running") return;
+
+    input = this.autoplay ? this.getAutopilotInput(baseInput) : baseInput;
+    this.displayInput = input;
 
     if (input.checkpointResetPressed) {
       this.resetToCheckpoint();
@@ -371,6 +375,7 @@ class RaceGptApp {
     if (this.countdownRemaining <= 0) {
       this.car.resetTo(this.track.startPose, 0);
       this.telemetry = initialTelemetry();
+      resetAutopilotState(this.car);
       this.lastTrackS = this.track.startS;
       this.mode = "running";
       this.ui.setCountdown("GO");
@@ -518,7 +523,7 @@ class RaceGptApp {
         this.autoplay
       );
       if (replayTimeMs != null) {
-        return `PB replay complete. Time: ${formatTime(replayTimeMs)}.`;
+        return `PB replay complete. Time: ${formatTime(Math.round(this.runTimeMs))}.`;
       }
       return `${CODEX_GHOST_NAME} replay complete. Benchmark time: ${formatTime(this.codexGhost.timeMs)}.`;
     }
@@ -689,8 +694,6 @@ function neutralInput(): InputSnapshot {
     anyGamepad: false
   };
 }
-
-new RaceGptApp();
 
 type RaceGptDebugState = {
   mode: GameMode;

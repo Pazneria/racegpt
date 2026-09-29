@@ -42,12 +42,6 @@ export interface LeaderboardEntry {
   timeMs: number;
 }
 
-export function getLeaderboardTitle(entries: LeaderboardEntry[]): string {
-  return entries.length === 1 && entries[0].name.toLowerCase().includes("pb")
-    ? "CURRENT PB"
-    : "MODEL BENCHMARKS";
-}
-
 interface GhostLabel {
   id: string;
   name: string;
@@ -951,13 +945,11 @@ function makeLeaderboardTexture(entries: LeaderboardEntry[], trackName: string):
   context.lineWidth = 16;
   context.strokeRect(30, 30, canvas.width - 60, canvas.height - 60);
 
-  const title = getLeaderboardTitle(entries);
-
   context.fillStyle = "#f5c542";
   context.font = "900 118px Arial";
   context.textAlign = "left";
   context.textBaseline = "alphabetic";
-  context.fillText(title, 110, 175);
+  context.fillText("MODEL BENCHMARKS", 110, 175);
 
   context.fillStyle = "#9eabb4";
   context.font = "700 46px Arial";

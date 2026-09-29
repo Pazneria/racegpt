@@ -89,6 +89,11 @@ interface TrackCSearchPolicy {
 }
 
 const TRACK_D_SEARCH_STATE = new WeakMap<Car, { steer: number }>();
+
+export function resetAutopilotState(car: Car): void {
+  TRACK_D_SEARCH_STATE.delete(car);
+}
+
 const TRACK_D_GAP_END_S = 796.6981333580593;
 const TRACK_D_DEFAULT_RAMP: TrackDRampOverlay = {
   steerSmooth: 1,

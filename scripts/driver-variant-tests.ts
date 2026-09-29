@@ -57,8 +57,8 @@ for (const testCase of cases) {
   );
   assertEqual(
     result.checkpointMsList.length,
-    2,
-    `${testCase.driver} should cross both checkpoints before finish`
+    track.checkpointSs.length,
+    `${testCase.driver} should cross every checkpoint before finish`
   );
   assertEqual(
     result.checkpointLateralList.length,
