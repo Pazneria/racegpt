@@ -13,7 +13,8 @@
     "test:drivers": "tsx scripts/driver-variant-tests.ts",
     "test:runtime": "tsx scripts/runtime-tests.ts",
     "test:pb-replay": "tsx scripts/pb-replay-tests.ts",
-    "test": "npm run test:car-physics && npm run test:drivers && npm run test:pb-replay && npm run test:runtime",
+    "test:model-pbs": "tsx scripts/model-pb-tests.ts",
+    "test": "npm run test:car-physics && npm run test:drivers && npm run test:pb-replay && npm run test:runtime && npm run test:model-pbs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

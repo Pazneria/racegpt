@@ -932,7 +932,7 @@ function makeTextTexture(text: string): CanvasTexture {
   return texture;
 }
 
-function makeLeaderboardTexture(entries: LeaderboardEntry[], trackName: string): CanvasTexture {
+export function makeLeaderboardTexture(entries: LeaderboardEntry[], trackName: string): CanvasTexture {
   const canvas = document.createElement("canvas");
   canvas.width = 2048;
   canvas.height = 1024;
@@ -949,7 +949,7 @@ function makeLeaderboardTexture(entries: LeaderboardEntry[], trackName: string):
   context.font = "900 118px Arial";
   context.textAlign = "left";
   context.textBaseline = "alphabetic";
-  context.fillText("MODEL BENCHMARKS", 110, 175);
+  context.fillText("MODEL PBS", 110, 175);
 
   context.fillStyle = "#9eabb4";
   context.font = "700 46px Arial";

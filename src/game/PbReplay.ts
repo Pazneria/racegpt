@@ -13,6 +13,14 @@ export const TRACK_D_DRIVER_TIMES_MS: Record<string, number> = {
   "search-37825": 37825
 };
 
+export function getCurrentPbDriver(trackId: string): string | null {
+  const times = trackId === "technical-bowl"
+    ? TRACK_C_DRIVER_TIMES_MS
+    : trackId === "jump-speedcheck" ? TRACK_D_DRIVER_TIMES_MS : null;
+  if (!times) return null;
+  return Object.entries(times).reduce((best, entry) => entry[1] < best[1] ? entry : best)[0];
+}
+
 export function getAutoplayReplayTimeMs(
   trackId: string,
   driverVariant: string,

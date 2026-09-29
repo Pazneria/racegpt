@@ -1,5 +1,6 @@
 import { Car, type CarTelemetry } from "./Car";
 import { getAutopilotInput } from "./Autopilot";
+import { getCurrentPbDriver } from "./PbReplay";
 import type { InputSnapshot } from "../input/InputManager";
 import type { Track } from "./Track";
 import type { GhostRecording, GhostSample } from "./Storage";
@@ -39,6 +40,7 @@ const INITIAL_TELEMETRY: CarTelemetry = {
 };
 
 export function createCodexGhostRecording(track: Track): GhostRecording {
+  const driver = getCurrentPbDriver(track.id) ?? "codex";
   const car = new Car();
   const samples: GhostSample[] = [];
   let telemetry = { ...INITIAL_TELEMETRY };
@@ -53,14 +55,17 @@ export function createCodexGhostRecording(track: Track): GhostRecording {
   samples.push(toGhostSample(car, 0));
 
   for (let step = 0; step < MAX_SECONDS / FIXED_DT; step += 1) {
-    const input = getAutopilotInput(NEUTRAL_INPUT, car, track, telemetry);
+    const input = getAutopilotInput(NEUTRAL_INPUT, car, track, telemetry, driver);
     telemetry = car.update(input, track, FIXED_DT, true);
     timeMs += FIXED_DT * 1000;
     recordAccumulator += FIXED_DT;
 
     const contact = car.getContact(track);
     const nextCheckpointS = track.checkpointSs[checkpointIndex];
-    if (nextCheckpointS != null && lastS < nextCheckpointS && contact.s >= nextCheckpointS) {
+    if (
+      nextCheckpointS != null && lastS < nextCheckpointS && contact.s >= nextCheckpointS &&
+      contact.absLateral <= track.roadWidth / 2 + 1.1
+    ) {
       checkpointMs = timeMs;
       checkpointMsList[checkpointIndex] = timeMs;
       checkpointIndex += 1;
@@ -71,11 +76,14 @@ export function createCodexGhostRecording(track: Track): GhostRecording {
       samples.push(toGhostSample(car, timeMs));
     }
 
-    if (lastS < track.finishS && contact.s >= track.finishS) {
+    if (
+      lastS < track.finishS && contact.s >= track.finishS &&
+      contact.absLateral <= track.roadWidth / 2 + 1.4
+    ) {
       samples.push(toGhostSample(car, timeMs));
       return {
         trackId: track.id,
-        timeMs,
+        timeMs: Math.round(timeMs),
         checkpointMs,
         checkpointMsList,
         samples
