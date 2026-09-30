@@ -49,7 +49,7 @@ Use a disposable browser context for tests.
 
 ## Pending mobile and keyboard integration
 
-Implementation owner: `task01a0f494-d10c-77ad-a8ff-1f3d5bab50e7` (via parent).
+Coordinate final controls with the mobile implementation owner via the parent.
 The guide's `#mobile-title` notice is deliberately **Pending verification**.
 The reviewed baseline has global shortcuts; the guide also labels the focused
 menu fix as pending. These caveats are about the game, not this accessible wiki.
@@ -115,3 +115,11 @@ runtime files. A WebGL game playtest is not required for a static docs change.
 
 These checks verify the wiki and its hosting artifact. They do not verify the
 pending mobile gameplay implementation or assert parity with the live site.
+
+## Narrow security review
+
+See `docs/wiki-security.md` for the reviewed data and input boundaries, exact
+outbound-link policy, checks and limitations. Keep the wiki inert when updating
+it: escape source-derived text and attribute values, and review additions to
+the link allowlist. Do not add credentials, personal save data, local machine
+paths or internal coordination identifiers to published files or source notes.
