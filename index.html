@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta
       name="description"
       content="A browser-playable 3D time-attack racing prototype."
@@ -48,7 +48,8 @@
             <button id="settings-button" type="button">Settings</button>
             <button id="return-button" type="button">Return to Arcade</button>
           </div>
-          <p class="small-note">WASD / arrows to drive - Space brakes - R resets - Enter restarts</p>
+          <p class="small-note keyboard-note">WASD / arrows to drive - Space brakes - R resets - Enter restarts</p>
+          <p class="small-note touch-note">Hold the arrows to steer and Gas to accelerate. Hold Brake to slow down. Use both thumbs; rotate for a wider view.</p>
         </div>
       </section>
 
@@ -60,6 +61,7 @@
             <button id="resume-button" class="primary-button" type="button">Resume</button>
             <button id="pause-restart-button" type="button">Restart Run</button>
             <button id="pause-settings-button" type="button">Settings</button>
+            <button id="pause-menu-button" type="button">Main Menu</button>
             <button id="pause-return-button" type="button">Return to Arcade</button>
           </div>
         </div>
@@ -160,6 +162,21 @@
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section id="touch-controls" class="drive-controls" aria-label="Touch driving controls" aria-hidden="true" inert>
+        <div class="drive-tools">
+          <button type="button" data-drive-action="reset" aria-label="Reset to checkpoint">Reset</button>
+          <button type="button" data-drive-action="pause" aria-label="Pause run">Pause</button>
+        </div>
+        <div class="drive-steering" aria-label="Steering">
+          <button type="button" data-drive="left" aria-label="Steer left">&#9664;</button>
+          <button type="button" data-drive="right" aria-label="Steer right">&#9654;</button>
+        </div>
+        <div class="drive-pedals" aria-label="Pedals">
+          <button type="button" data-drive="brake">Brake</button>
+          <button type="button" data-drive="gas" aria-label="Accelerate">Gas</button>
         </div>
       </section>
 

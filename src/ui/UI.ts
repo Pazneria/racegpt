@@ -17,6 +17,7 @@ export interface HudState {
 }
 
 export interface UIActions {
+  clearInput: () => void;
   startRun: () => void;
   resume: () => void;
   restart: () => void;
@@ -43,6 +44,7 @@ type ScreenId = "menu" | "pause" | "finish" | "settings" | "none";
 export class UI {
   private readonly screens: Record<Exclude<ScreenId, "none">, HTMLElement>;
   private readonly hud: HTMLElement;
+  private readonly driveControls: HTMLElement;
   private readonly currentTime: HTMLElement;
   private readonly bestTime: HTMLElement;
   private readonly splitTime: HTMLElement;
@@ -77,6 +79,7 @@ export class UI {
       settings: getElement("settings-screen")
     };
     this.hud = getElement("hud");
+    this.driveControls = getElement("touch-controls");
     this.currentTime = getElement("current-time");
     this.bestTime = getElement("best-time");
     this.splitTime = getElement("split-time");
@@ -132,6 +135,14 @@ export class UI {
   }
 
   show(screen: ScreenId): void {
+    // A menu transition must release fingers captured by the previous driving screen.
+    this.actions.clearInput();
+    const driving = screen === "none";
+    this.driveControls.classList.toggle("drive-controls--visible", driving);
+    this.driveControls.inert = !driving;
+    this.driveControls.setAttribute("aria-hidden", String(!driving));
+    // Hidden buttons must not keep keyboard focus when gameplay resumes.
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     for (const [name, element] of Object.entries(this.screens)) {
       element.classList.toggle("screen--visible", name === screen);
     }
@@ -229,6 +240,7 @@ export class UI {
     bind("pause-restart-button", this.actions.restart);
     bind("pause-settings-button", this.actions.openSettings);
     bind("pause-return-button", this.actions.returnToArcade);
+    bind("pause-menu-button", this.actions.mainMenu);
     bind("finish-restart-button", this.actions.restart);
     bind("finish-menu-button", this.actions.mainMenu);
     bind("settings-back-button", this.actions.closeSettings);

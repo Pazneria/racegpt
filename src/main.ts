@@ -18,6 +18,7 @@ import {
 import { Track, TRACK_DEFINITIONS } from "./game/Track";
 import { SceneRenderer, type SceneGhost } from "./render/SceneRenderer";
 import { UI } from "./ui/UI";
+import { resolveArcadeReturnUrl } from "./ui/navigation";
 
 type GameMode = "menu" | "countdown" | "running" | "paused" | "finished" | "settings";
 
@@ -87,6 +88,7 @@ export class RaceGptApp {
       [{ rank: 1, name: CODEX_GHOST_NAME, timeMs: this.codexGhost.timeMs }]
     );
     this.ui = new UI({
+      clearInput: () => this.input.clearHeldInput(),
       startRun: () => this.startRunFromGesture(),
       resume: () => this.resumeFromPause(),
       restart: () => this.restartFromGesture(),
@@ -242,17 +244,7 @@ export class RaceGptApp {
 
   private returnToArcade(): void {
     this.audio.menuClick();
-    const params = new URLSearchParams(window.location.search);
-    const explicitReturn = params.get("return");
-    if (explicitReturn) {
-      window.location.href = explicitReturn;
-      return;
-    }
-    if (window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost") {
-      window.location.href = "http://localhost:5510/";
-      return;
-    }
-    window.location.href = "https://pazneria.github.io/arcade/";
+    window.location.href = resolveArcadeReturnUrl(window.location.href);
   }
 
   private frame(now: number): void {
@@ -597,7 +589,7 @@ export class RaceGptApp {
     if (this.autoplay && (this.mode === "running" || this.mode === "countdown")) {
       return CODEX_GHOST_NAME;
     }
-    return rawInput.anyGamepad ? "Controller" : "Keyboard";
+    return rawInput.anyGamepad ? "Controller" : rawInput.anyTouch ? "Touch" : "Keyboard";
   }
 
   private getAutopilotInput(base: InputSnapshot): InputSnapshot {
