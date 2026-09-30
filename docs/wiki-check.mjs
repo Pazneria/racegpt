@@ -17,7 +17,11 @@ assert.match(html, /<html lang="en">/);
 assert.match(html, /name="viewport"/);
 assert.match(html, /class="skip-link" href="#guide"/);
 assert.match(html, /<main id="guide" tabindex="-1">/);
-assert.match(html, /Pending verification/);
+assert.match(html, /Verified in local touch emulation/);
+assert.doesNotMatch(html, /Pending verification|being implemented separately|keyboard-menu fix is in progress/);
+for (const phrase of ['simultaneous steering, Gas and Brake', 'second finger', '780 px', 'blur releases input but does not automatically pause', 'physical phones', 'iOS Safari', 'Hardware gamepads were not tested', 'embedded login credentials']) {
+  assert(html.toLowerCase().includes(phrase.toLowerCase()), `Missing verified control or limitation: ${phrase}`);
+}
 assert.match(css, /:focus-visible/);
 assert.doesNotMatch(html, /<(?:script|iframe|object|embed|form|base)\b|\bon[a-z]+\s*=|\b(?:srcdoc|target|style|http-equiv)\s*=|\bsrc(?:set)?\s*=|localStorage\.|sessionStorage\./i, 'Keep the text guide inert and links in the same tab');
 assert.doesNotMatch(html, /&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[\da-f]+;)/i, 'Escape HTML ampersands, including query separators');
@@ -30,7 +34,7 @@ const allowedLocalLinks = new Set(['../', './wiki.css', ...trackIds.flatMap(id =
 ])]);
 const sourcePaths = [
   `commit/${sourceCommit}`,
-  ...['src/input/InputManager.ts', 'src/game/Track.ts', 'src/game/Car.ts', 'src/main.ts', 'src/game/Storage.ts']
+  ...['src/input/InputManager.ts', 'src/game/Track.ts', 'src/game/Car.ts', 'src/main.ts', 'src/game/Storage.ts', 'src/ui/navigation.ts']
     .map(file => `blob/${sourceCommit}/${file}`)
 ];
 const allowedOutboundLinks = new Set(sourcePaths.map(sourcePath => `https://github.com/Pazneria/racegpt/${sourcePath}`));
@@ -45,7 +49,7 @@ for (const [, doubleQuoted, singleQuoted, unquoted] of html.matchAll(/\b(?:href|
     const url = new URL(href);
     assert.equal(url.origin, 'https://github.com', 'Outbound source origin');
     assert.equal(url.username + url.password, '', 'No URL credentials');
-    assert(allowedOutboundLinks.has(href), 'Outbound link must be one of the six reviewed pinned sources');
+    assert(allowedOutboundLinks.has(href), 'Outbound link must be one of the seven reviewed pinned sources');
   } else {
     assert(!href.startsWith('/'), `Root-absolute link breaks the Pages prefix: ${href}`);
     assert(allowedLocalLinks.has(href), 'Local link must be a reviewed stylesheet, game or track/demo destination');
@@ -72,4 +76,4 @@ const packageVersion = JSON.parse(readFileSync(path.join(root, 'package.json'), 
 for (const phrase of ['Split', '360 milliseconds', '0.18 seconds', '65%', 'does not require every checkpoint', packageVersion]) {
   assert(html.includes(phrase), `Missing reviewed fact ${phrase}`);
 }
-console.log(`Wiki checks passed: ${ids.length} unique IDs, ${localLinks} local links, 4 track links and 4 demos; inert HTML, escaped ampersands, six allowed HTTPS source destinations, no external assets or save access.`);
+console.log(`Wiki checks passed: ${ids.length} unique IDs, ${localLinks} local links, 4 track links and 4 demos; verified touch/keyboard claims, explicit device limits, inert HTML, escaped ampersands, seven allowed HTTPS source destinations, no external assets or save access.`);

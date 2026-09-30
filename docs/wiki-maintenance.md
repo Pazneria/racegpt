@@ -13,15 +13,18 @@ and track/demo links use `../`, preserving the repository's Pages prefix.
 
 ## Source basis
 
-Reviewed on 2026-09-30 at `6a1288cf9eb75f5027fe22110f1757978c456b1b`, package
-version `0.1.0`. An independent clone was made from the committed HEAD of the
-existing `fix/keyboard-menu-navigation` checkout. Its uncommitted keyboard and
-ongoing touch work was inspected read-only, excluded from verified guide claims,
-and preserved. No remote/deployed version parity is asserted.
+Reviewed on 2026-09-30 at `020eba22bef8a3222cef0102c885753ab79018f1`, package
+version `0.1.0`, using the exact committed source and the implementation owner's
+completed local test handoff. The independent documentation clone began at
+`6a1288cf9eb75f5027fe22110f1757978c456b1b`; the final runtime object was fetched
+locally and inspected read-only. Only documentation paths were changed here.
+No remote/deployed version parity is asserted.
 
 | Guide topic | Source of truth | Details to recheck after changes |
 | --- | --- | --- |
 | Keyboard and gamepad | `src/input/InputManager.ts`, `src/main.ts` `handleModeInput` | Brake aliases, gamepad indices 0/1/9 and triggers 6/7, start/restart/pause, focused UI behavior |
+| Touch and phone menus | `src/input/InputManager.ts`, `src/ui/UI.ts`, `index.html`, `src/style.css`; implementation-owner test handoff | Independent steering/Gas/Brake pointers; both arrows cancel; Reset and secondary-finger Pause; portrait/landscape scrolling; 780 px/coarse-pointer display; cancellation, blur, rotation and transition cleanup |
+| Exit navigation | `src/ui/navigation.ts`, `src/main.ts` `returnToArcade`; implementation-owner tests | HTTP(S) and relative return destinations; reject credentials, other schemes and malformed URLs; preserve local/public Arcade fallback; no destination-origin allowlist |
 | Tracks | `src/game/Track.ts` `TRACK_DEFINITIONS`, `index.html` | Four IDs/names, default A, checkpoint ratios, D's road gap and wider road; A's 30–60 sec wording is a target |
 | Car behavior | `src/game/Car.ts` | One car, seven automatic gears, speed-dependent steering, brake/steer drift, off-road drag, barriers, weaker air control and landing loss |
 | Timing and recovery | `src/main.ts` `beginCountdown`, `fixedStep`, `checkTimingVolumes`, `resetToCheckpoint`, `finishRun`; `src/core/math.ts` | Three seconds, simulation clock, latest cumulative split, forward crossing, 500 ms restore history, double reset under 360 ms, 180 ms control lock, timer not rewound |
@@ -47,23 +50,29 @@ Use a disposable browser context for tests.
 - Do not copy the menu's old “one checkpoint” generalization into this guide:
   Tracks C and D each have two.
 
-## Pending mobile and keyboard integration
+## Verified mobile and keyboard integration
 
-Coordinate final controls with the mobile implementation owner via the parent.
-The guide's `#mobile-title` notice is deliberately **Pending verification**.
-The reviewed baseline has global shortcuts; the guide also labels the focused
-menu fix as pending. These caveats are about the game, not this accessible wiki.
+The pending implementation notices have been replaced using final runtime
+commit `020eba22bef8a3222cef0102c885753ab79018f1` and its local test handoff.
+The handoff reports passing input/runtime/build checks and a production browser
+playtest at 390x844 portrait, 844x390 landscape, 320x568 small phone and 1280x720
+desktop. It covers actual acceleration, turning and braking, simultaneous
+steering/pedals, secondary-finger Pause, Reset, menu actions and scrolling,
+settings/PB preservation, input interruption cleanup, native focused keyboard
+controls and unsafe-script return fallback. This task reviewed that evidence
+and source; it did not duplicate the runtime playtest.
 
-After the parent supplies the final controls and implementation commit:
+The guide now documents Left/Right, Gas, Brake, Reset and Pause; all five pause
+menu choices; both phone orientations; release/cancel/lost-capture behavior;
+and cleared held inputs on menu transitions, blur, visibility change, resize,
+orientation change and pagehide. Blur does not automatically pause the timer.
+The input source label can show Touch; settings and best-run schemas are
+unchanged. One fixed car remains the complete car-selection scope.
 
-1. Review the final input, UI, markup and CSS read-only. Verify touch control
-   labels, simultaneous steering/pedals, reset/restart/pause placement, menu
-   access, and interruption cleanup in a short disposable browser check.
-2. Replace the pending notice with only verified controls; update the focused
-   menu limit after checking Tab/Enter/Space behavior in the merged game.
-3. Update the visible source basis and commit links. Keep the source matrix
-   aligned with the final runtime commit; do not alter runtime-owned files.
-4. Re-run the lightweight wiki checks before publication.
+Keep these limits explicit: Chrome touch emulation with software WebGL is not
+a physical phone, iOS Safari, hardware gamepad or mobile thermal/performance
+test. Gamepad coexistence used mocked state. No full manual phone race finish
+was performed; existing runtime tests cover timing/checkpoint/finish/restart.
 
 ## Integration and validation
 
@@ -73,6 +82,12 @@ checkout. Only the `public/wiki/` and `docs/wiki-*` paths belong to this task.
 No runtime link has been added, so the runtime owner can add an in-game Wiki
 link separately if desired. The hub owner should link the canonical `/wiki/`
 route only after publication is verified.
+
+Integrate the tested runtime commit together with all documentation commits
+before publishing. The independent docs branch still has the original runtime
+files in its working tree: its build checks static wiki copying and layout,
+not the final mobile runtime. Source links are pinned to the final runtime
+commit; validate their live availability after that commit is pushed.
 
 Run the structural/content checker without adding package scripts:
 
@@ -112,9 +127,16 @@ runtime files. A WebGL game playtest is not required for a static docs change.
 - A disposable game-save sentinel survived reload and navigation with no
   additional local-storage entries. The user's browser profile was not used.
 - `git diff --check`: passed. Only new documentation paths are included.
+- Final revision: mobile/keyboard/exit behavior was reconciled with runtime
+  `020eba22bef8a3222cef0102c885753ab79018f1` and the owner's handoff. All six
+  pinned implementation files exist in that Git object. The source/content,
+  build, short wiki browser and 16 negative security-fixture checks passed
+  again after replacing the pending notices. The touch-controls section was
+  visually checked at phone width.
 
-These checks verify the wiki and its hosting artifact. They do not verify the
-pending mobile gameplay implementation or assert parity with the live site.
+These checks verify the wiki and its hosting artifact. Runtime claims use the
+implementation owner's completed handoff and read-only source review; the docs
+checks do not certify physical-device behavior or parity with the live site.
 
 ## Narrow security review
 

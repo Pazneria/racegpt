@@ -65,13 +65,27 @@
           <div><dt>Show / hide inputs</dt><dd><kbd>I</kbd> toggles the input overlay</dd></div>
         </dl>
         <p>Keep holding the brake at low speed to reverse. Space uses the same brake input; it is not a separate handbrake.</p>
+        <p>When a menu button, checkbox or slider has focus, it keeps its native keyboard behavior: Tab moves focus, Enter or Space activates buttons, and arrow keys adjust supported controls. Starting or resuming a run releases hidden menu focus so the driving keys work immediately.</p>
         <h3>Gamepad</h3>
         <p>The game reads the first connected controller exposed by your browser. On a standard mapping, use the left stick to steer, the right trigger for gas and the left trigger for brake. Button 0 (usually A / Cross) resets the checkpoint and confirms from the menu or finish screen. Button 1 (usually B / Circle) restarts; button 9 (usually Start / Options) pauses or resumes. Labels depend on the controller and browser.</p>
         <aside class="notice" aria-labelledby="mobile-title">
-          <p class="status-label">Pending verification</p>
-          <h3 id="mobile-title">Mobile driving controls</h3>
-          <p>Touch driving controls are being implemented separately. Their final layout and behavior have not been verified for this guide. Use the keyboard or gamepad controls above until this section is updated for the published build.</p>
+          <p class="status-label">Verified in local touch emulation</p>
+          <h3 id="mobile-title">Touch &amp; mobile controls</h3>
+          <p>Touch controls appear on devices reporting a coarse pointer, or at viewport widths of 780 px or less. Steering sits at the bottom left, Gas and Brake at the bottom right, and Reset and Pause at the top right during gameplay.</p>
+          <dl class="control-list">
+            <div><dt>Left / right arrows</dt><dd>Hold to steer. Holding both arrows cancels touch steering.</dd></div>
+            <div><dt>Gas / Brake</dt><dd>Hold for acceleration or braking. Separate fingers support simultaneous steering, Gas and Brake; keep holding Brake at low speed to reverse.</dd></div>
+            <div><dt>Reset</dt><dd>Press for the same checkpoint recovery as <kbd>R</kbd>. Two quick presses use the double-reset behavior described below.</dd></div>
+            <div><dt>Pause</dt><dd>Press to open the pause menu. A second finger can press Pause while another finger holds a driving control.</dd></div>
+          </dl>
+          <p>Release a finger to release that control. Pointer cancellation or lost capture also releases it. Menu transitions, blur, visibility changes, resize, rotation and leaving the page clear held keyboard and touch inputs. After rotating or resuming, press the driving controls again.</p>
+          <p><strong>Pause before switching away:</strong> blur releases input but does not automatically pause the run timer.</p>
+          <p class="small">Validated in Chrome touch emulation, including portrait and landscape. Physical phones, iOS Safari and mobile thermal/performance behavior remain untested.</p>
         </aside>
+        <h3>Menus on a phone</h3>
+        <p>Tap a track and Start Run from the main menu. Menus scroll in portrait and short landscape viewports, with no orientation lock. Settings and Return to Arcade remain reachable; the finish dialog offers Run Again and Main Menu.</p>
+        <p>The pause menu offers <strong>Resume</strong>, <strong>Restart Run</strong>, <strong>Settings</strong>, <strong>Main Menu</strong> and <strong>Return to Arcade</strong>. Resume continues the attempt; Restart Run begins a fresh countdown; Main Menu leaves the current attempt while keeping saved bests; Return to Arcade exits the game.</p>
+        <p class="small">When mixing devices, active gamepad steering has priority, then touch steering, then keyboard. Gas and brake each use the strongest input from the devices. Hardware gamepads were not tested; coexistence was checked with mocked controller state.</p>
         <p class="small">This guide supports touch scrolling and links. On a keyboard, use Tab / Shift+Tab to move between links and Enter to open them. The skip link goes straight to the guide.</p>
       </section>
 
@@ -173,6 +187,7 @@
           <div><dt>Input overlay</dt><dd>Show steering, gas, brake and input-source readouts during the run. Off by default; <kbd>I</kbd> also toggles it.</dd></div>
         </dl>
         <p>The game saves settings, the selected track, and one best run with ghost samples per track in your browser's local storage. Returning to the menu, restarting or selecting another track does not intentionally erase those bests.</p>
+        <p><strong>Returning to the Arcade:</strong> the exit button uses the normal Arcade destination unless a valid custom return address is supplied. Custom destinations may be relative or use HTTP(S), and must not contain embedded login credentials. Malformed addresses and other schemes fall back to the normal Arcade. An accepted address can lead to another website.</p>
         <p><strong>Keep your saves:</strong> use the same browser profile and site address. Records are not synced between devices or browsers. Clearing site data removes them, and private browsing may discard them when the session ends. A local test address has separate storage from the GitHub Pages address.</p>
         <p class="small">The wiki itself does not read, write or clear game saves. This version has no save export/import, account or cloud backup. If local storage is blocked or full, saves can fail; the game does not show a dedicated save-error message.</p>
       </section>
@@ -183,22 +198,23 @@
           <li><strong>Time attack only.</strong> One player car, four available point-to-point tracks and ghost comparisons. No combat, multiplayer race, campaign, unlock tree or vehicle upgrades.</li>
           <li><strong>Local records only.</strong> The model billboard is a built-in reference, not an online player leaderboard.</li>
           <li><strong>Simulation timing.</strong> The clock advances with physics steps rather than directly with wall-clock time. Very slow frames can make an attempt diverge from real elapsed time.</li>
-          <li><strong>Browser-dependent input.</strong> Controller mapping and detection depend on your browser. Touch driving is pending verification; no tilt controls are documented.</li>
-          <li><strong>Focused menus are changing.</strong> The reviewed baseline uses global game shortcuts. A separate keyboard-menu fix is in progress; this guide does not claim it has shipped.</li>
+          <li><strong>Device testing limits.</strong> Touch driving and phone menus were tested locally in Chrome emulation. Physical phones, iOS Safari and hardware gamepads remain untested. No tilt control is implemented.</li>
+          <li><strong>Completion and performance limits.</strong> No full manual phone race was completed in the touch playtest; existing runtime tests cover finish/checkpoint/restart behavior. Mobile thermal and sustained performance testing was not performed.</li>
           <li><strong>Rendering requirements.</strong> The game uses Three.js and WebGL. This text guide can be read without the game renderer or JavaScript.</li>
         </ul>
       </section>
 
       <section id="basis" aria-labelledby="basis-title">
         <div class="section-heading"><span class="section-number">09</span><h2 id="basis-title">Version &amp; update basis</h2></div>
-        <p>Reviewed on <time datetime="2026-09-30">30 September 2026</time>, against package version <strong>0.1.0</strong> at commit <a href="https://github.com/Pazneria/racegpt/commit/6a1288cf9eb75f5027fe22110f1757978c456b1b"><code>6a1288c</code></a>. This is the source basis for the guide, not a claim about the version currently deployed.</p>
-        <p>Mechanics were checked against the implementation rather than the original design target. Mobile controls and the uncommitted keyboard-menu changes are excluded from verified behavior until their final implementation is reviewed.</p>
+        <p>Reviewed on <time datetime="2026-09-30">30 September 2026</time>, against package version <strong>0.1.0</strong> at commit <a href="https://github.com/Pazneria/racegpt/commit/020eba22bef8a3222cef0102c885753ab79018f1"><code>020eba2</code></a>. This is the source basis for the guide, not a claim about the version currently deployed.</p>
+        <p>Mechanics were checked against the implementation rather than the original design target. Touch controls, focused-menu keyboard behavior and exit-address validation were reconciled with this exact commit and its implementation owner's local test handoff. Physical-device and browser limits remain explicit above.</p>
         <div class="source-links" aria-label="Implementation sources">
-          <a href="https://github.com/Pazneria/racegpt/blob/6a1288cf9eb75f5027fe22110f1757978c456b1b/src/input/InputManager.ts">Controls</a>
-          <a href="https://github.com/Pazneria/racegpt/blob/6a1288cf9eb75f5027fe22110f1757978c456b1b/src/game/Track.ts">Tracks</a>
-          <a href="https://github.com/Pazneria/racegpt/blob/6a1288cf9eb75f5027fe22110f1757978c456b1b/src/game/Car.ts">Car physics</a>
-          <a href="https://github.com/Pazneria/racegpt/blob/6a1288cf9eb75f5027fe22110f1757978c456b1b/src/main.ts">Timing &amp; ghosts</a>
-          <a href="https://github.com/Pazneria/racegpt/blob/6a1288cf9eb75f5027fe22110f1757978c456b1b/src/game/Storage.ts">Settings &amp; storage</a>
+          <a href="https://github.com/Pazneria/racegpt/blob/020eba22bef8a3222cef0102c885753ab79018f1/src/input/InputManager.ts">Controls</a>
+          <a href="https://github.com/Pazneria/racegpt/blob/020eba22bef8a3222cef0102c885753ab79018f1/src/game/Track.ts">Tracks</a>
+          <a href="https://github.com/Pazneria/racegpt/blob/020eba22bef8a3222cef0102c885753ab79018f1/src/game/Car.ts">Car physics</a>
+          <a href="https://github.com/Pazneria/racegpt/blob/020eba22bef8a3222cef0102c885753ab79018f1/src/main.ts">Timing &amp; ghosts</a>
+          <a href="https://github.com/Pazneria/racegpt/blob/020eba22bef8a3222cef0102c885753ab79018f1/src/game/Storage.ts">Settings &amp; storage</a>
+          <a href="https://github.com/Pazneria/racegpt/blob/020eba22bef8a3222cef0102c885753ab79018f1/src/ui/navigation.ts">Exit navigation</a>
         </div>
       </section>
       <footer class="site-footer"><span>RaceGPT / Driver handbook</span><a href="#guide">Back to top ↑</a><a href="../">Return to game →</a></footer>

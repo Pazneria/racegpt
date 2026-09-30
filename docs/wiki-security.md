@@ -27,13 +27,22 @@ documentation change, not a security certification of the game or hosting.
 - No executable HTML, event handlers, forms, embedded frames/objects,
   `srcdoc`, new-tab targets, or dynamic script injection sinks exist in the
   shipped wiki. No iframe or `postMessage` interaction is introduced.
-- The six outbound links are exact HTTPS GitHub destinations for the reviewed
-  commit and five implementation files. All six were opened successfully
-  using read-only web access. They use ordinary same-tab navigation, with no
+- The seven outbound links are exact HTTPS GitHub destinations for the reviewed
+  runtime commit and six implementation files. The earlier six source links
+  were opened at the initial review basis. The final pinned destinations were
+  verified against local Git objects; live availability must be checked after
+  the runtime commit is pushed. They use same-tab navigation, with no
   opener relationship, URL credentials, arbitrary redirect parameters or
   protocol-relative/script/data links.
 - The only stylesheet is `./wiki.css`. It uses system fonts and CSS shapes;
   no external images, fonts, CSS imports or `url()` assets are fetched.
+- The guide describes the runtime owner's new return-address validation at
+  `020eba22bef8a3222cef0102c885753ab79018f1`: HTTP(S), including relative
+  destinations, with embedded credentials rejected and normal local/public
+  Arcade fallback for invalid or other schemes. This is scheme/credential
+  validation, not an origin allowlist; an accepted URL can lead off-site. The
+  implementation owner's unit/browser evidence includes unsafe script-return
+  fallback. No runtime navigation code was edited by this documentation task.
 - No dependencies, package/lock files, workflows, runtime security settings,
   permissions or account configuration were changed. Existing dependencies
   were installed offline for the earlier build; no new dependency was added.
@@ -59,12 +68,14 @@ documentation change, not a security certification of the game or hosting.
   hostile local-storage string without reflected markup or script execution;
   network requests from the wiki stayed on the local test origin and loaded
   only the page and its stylesheet.
-- Outbound source destinations were validated as exact URLs and independently
-  opened; this does not certify GitHub content or future redirect behavior.
+- Outbound source destinations were validated as exact URLs and local committed
+  files; final live destinations await runtime publication. Prior live checks
+  do not certify GitHub content or future redirect behavior.
 - The earlier production build and keyboard/touch checks passed. Functional
   tests alone do not establish security.
 - No full-repository audit, dependency vulnerability audit, credential scan,
   game save/import fuzzing, runtime-input audit, hosting-policy change or live
   penetration test was performed. The unpublished route cannot yet be checked
   against deployed headers or hosting behavior. Final mobile/keyboard runtime
-  work remains outside this security review.
+  security evidence belongs to the implementation owner; this review checks
+  its accurate description and the wiki's own inert content/link behavior.
