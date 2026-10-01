@@ -17,11 +17,14 @@ assert.match(html, /<html lang="en">/);
 assert.match(html, /name="viewport"/);
 assert.match(html, /class="skip-link" href="#guide"/);
 assert.match(html, /<main id="guide" tabindex="-1">/);
-assert.match(html, /Verified in local touch emulation/);
+assert.match(html, /<h3 id="mobile-title">Touch &amp; mobile controls<\/h3>/);
 assert.doesNotMatch(html, /Pending verification|being implemented separately|keyboard-menu fix is in progress/);
-for (const phrase of ['simultaneous steering, Gas and Brake', 'second finger', '780 px', 'blur releases input but does not automatically pause', 'physical phones', 'iOS Safari', 'Hardware gamepads were not tested', 'embedded login credentials']) {
+for (const phrase of ['simultaneous steering, Gas and Brake', 'second finger', '780 px', 'does not automatically pause the run timer', 'physical phones', 'iOS Safari', 'hardware gamepads', 'remain untested', 'embedded login credentials']) {
   assert(html.toLowerCase().includes(phrase.toLowerCase()), `Missing verified control or limitation: ${phrase}`);
 }
+const headings = [...html.matchAll(/<h[1-3]\b[^>]*>([\s\S]*?)<\/h[1-3]>/g)]
+  .map(match => match[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim());
+assert.equal(headings.length, new Set(headings).size, 'Use distinct topic/task headings');
 assert.match(css, /:focus-visible/);
 assert.doesNotMatch(html, /<(?:script|iframe|object|embed|form|base)\b|\bon[a-z]+\s*=|\b(?:srcdoc|target|style|http-equiv)\s*=|\bsrc(?:set)?\s*=|localStorage\.|sessionStorage\./i, 'Keep the text guide inert and links in the same tab');
 assert.doesNotMatch(html, /&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[\da-f]+;)/i, 'Escape HTML ampersands, including query separators');

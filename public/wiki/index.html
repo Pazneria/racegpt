@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="RaceGPT field guide: controls, four tracks, driving, checkpoint resets, timing, ghosts and local saves.">
+  <meta name="description" content="RaceGPT player guide: controls, tracks, car handling, checkpoint resets, timing, ghosts and local saves.">
   <meta name="color-scheme" content="dark">
-  <title>RaceGPT — Field guide</title>
+  <title>RaceGPT - Player guide</title>
   <link rel="stylesheet" href="./wiki.css">
 </head>
 <body>
   <a class="skip-link" href="#guide">Skip to guide</a>
   <header class="site-header">
     <a class="brand" href="../" aria-label="RaceGPT game"><span class="brand-mark" aria-hidden="true">R</span> RaceGPT</a>
-    <span class="header-label">Driver handbook / 01</span>
+    <span class="header-label">Player guide</span>
     <a class="play-link" href="../">Play game <span aria-hidden="true">↗</span></a>
   </header>
 
@@ -21,35 +21,33 @@
       <p class="eyebrow">In this guide</p>
       <a href="#start"><span>01</span> First run</a>
       <a href="#controls"><span>02</span> Controls</a>
-      <a href="#tracks"><span>03</span> The tracks</a>
+      <a href="#tracks"><span>03</span> Tracks</a>
       <a href="#driving"><span>04</span> Car &amp; handling</a>
       <a href="#timing"><span>05</span> Timing &amp; resets</a>
       <a href="#ghosts"><span>06</span> Ghosts &amp; bests</a>
       <a href="#settings"><span>07</span> Settings &amp; saves</a>
       <a href="#limits"><span>08</span> Current limits</a>
       <a href="#basis"><span>09</span> Version &amp; sources</a>
-      <p class="nav-note">A source-checked guide to the current prototype.</p>
     </nav>
 
     <main id="guide" tabindex="-1">
       <div class="hero">
-        <p class="eyebrow accent">Private test facility / Field guide</p>
-        <h1>Find your line.<br><span>Beat your time.</span></h1>
-        <p class="hero-copy">RaceGPT is a browser-based, point-to-point time attack. Drive one car through four test tracks, compare against a model ghost, and improve your own local best.</p>
+        <h1>RaceGPT<br><span>Player guide</span></h1>
+        <p class="hero-copy">RaceGPT is a time-attack driving game in your browser. Drive from start to finish on any of four tracks, then try to improve your time. Ghosts show your personal best and a built-in reference run.</p>
         <div class="hero-meta"><span>4 tracks</span><span>1 car</span><span>Personal bests</span></div>
         <a class="button" href="../">Start driving <span aria-hidden="true">→</span></a>
         <div class="hero-stripes" aria-hidden="true"></div>
       </div>
 
       <section id="start" aria-labelledby="start-title">
-        <div class="section-heading"><span class="section-number">01</span><h2 id="start-title">Your first run</h2></div>
+        <div class="section-heading"><span class="section-number">01</span><h2 id="start-title">Start your first run</h2></div>
         <ol class="steps">
           <li><strong>Choose a track.</strong> Test Track A is selected by default. All four tracks are available immediately; choosing another reloads the game on that track.</li>
           <li><strong>Select Start Run.</strong> The car stays at the start through a three-second countdown. The timer begins at GO.</li>
-          <li><strong>Follow the road to the finish.</strong> Checkpoint gates record splits along the way. The goal is a lower elapsed time, rather than points or laps.</li>
+          <li><strong>Follow the road to the finish.</strong> Checkpoint gates record your elapsed time along the way. The goal is to finish as quickly as you can.</li>
           <li><strong>Run again.</strong> The first completed player run becomes your local best. A faster finish replaces it and its ghost; a slower finish leaves it intact.</li>
         </ol>
-        <p class="tip"><strong>Getting comfortable:</strong> try short steering inputs and brake before tighter turns. Use <kbd>R</kbd> to recover from a mistake, or <kbd>Enter</kbd> for a fresh timed attempt.</p>
+        <p class="tip">Try short steering inputs and brake before tighter turns. Use <kbd>R</kbd> to recover from a mistake, or <kbd>Enter</kbd> for a fresh timed attempt.</p>
       </section>
 
       <section id="controls" aria-labelledby="controls-title">
@@ -65,59 +63,57 @@
           <div><dt>Show / hide inputs</dt><dd><kbd>I</kbd> toggles the input overlay</dd></div>
         </dl>
         <p>Keep holding the brake at low speed to reverse. Space uses the same brake input; it is not a separate handbrake.</p>
-        <p>When a menu button, checkbox or slider has focus, it keeps its native keyboard behavior: Tab moves focus, Enter or Space activates buttons, and arrow keys adjust supported controls. Starting or resuming a run releases hidden menu focus so the driving keys work immediately.</p>
+        <p>In menus, use Tab to move between controls, Enter or Space to activate buttons, and arrow keys to adjust sliders. Starting or resuming a run makes the driving keys available immediately.</p>
         <h3>Gamepad</h3>
-        <p>The game reads the first connected controller exposed by your browser. On a standard mapping, use the left stick to steer, the right trigger for gas and the left trigger for brake. Button 0 (usually A / Cross) resets the checkpoint and confirms from the menu or finish screen. Button 1 (usually B / Circle) restarts; button 9 (usually Start / Options) pauses or resumes. Labels depend on the controller and browser.</p>
+        <p>Use the left stick to steer, the right trigger for gas and the left trigger for brake. A / Cross resets the checkpoint and confirms from the menu or finish screen; B / Circle restarts; Start / Options pauses or resumes. These are the usual labels for standard controller buttons 0, 1 and 9. Your browser's mapping may differ, and the game uses the first connected controller.</p>
         <aside class="notice" aria-labelledby="mobile-title">
-          <p class="status-label">Verified in local touch emulation</p>
           <h3 id="mobile-title">Touch &amp; mobile controls</h3>
-          <p>Touch controls appear on devices reporting a coarse pointer, or at viewport widths of 780 px or less. Steering sits at the bottom left, Gas and Brake at the bottom right, and Reset and Pause at the top right during gameplay.</p>
+          <p>Touch controls appear on devices with a coarse pointer, such as a touchscreen, or when the browser window is 780 px wide or less. During a run, steering is at the bottom left, Gas and Brake at the bottom right, and Reset and Pause at the top right.</p>
           <dl class="control-list">
             <div><dt>Left / right arrows</dt><dd>Hold to steer. Holding both arrows cancels touch steering.</dd></div>
-            <div><dt>Gas / Brake</dt><dd>Hold for acceleration or braking. Separate fingers support simultaneous steering, Gas and Brake; keep holding Brake at low speed to reverse.</dd></div>
-            <div><dt>Reset</dt><dd>Press for the same checkpoint recovery as <kbd>R</kbd>. Two quick presses use the double-reset behavior described below.</dd></div>
+            <div><dt>Gas / Brake</dt><dd>Hold to accelerate or brake. You can use separate fingers for simultaneous steering, Gas and Brake. Keep holding Brake at low speed to reverse.</dd></div>
+            <div><dt>Reset</dt><dd>Press for the same checkpoint recovery as <kbd>R</kbd>. Two quick presses use the <a href="#timing">double-reset behavior</a>.</dd></div>
             <div><dt>Pause</dt><dd>Press to open the pause menu. A second finger can press Pause while another finger holds a driving control.</dd></div>
           </dl>
-          <p>Release a finger to release that control. Pointer cancellation or lost capture also releases it. Menu transitions, blur, visibility changes, resize, rotation and leaving the page clear held keyboard and touch inputs. After rotating or resuming, press the driving controls again.</p>
-          <p><strong>Pause before switching away:</strong> blur releases input but does not automatically pause the run timer.</p>
-          <p class="small">Validated in Chrome touch emulation, including portrait and landscape. Physical phones, iOS Safari and mobile thermal/performance behavior remain untested.</p>
+          <p>Lifting a finger releases its control, as does an interrupted touch. Opening a menu, switching away, resizing or rotating the screen clears held keyboard and touch inputs. Press the driving controls again after rotating or resuming.</p>
+          <p><strong>Pause before switching away:</strong> leaving the game window releases held inputs but does not automatically pause the run timer.</p>
         </aside>
         <h3>Menus on a phone</h3>
-        <p>Tap a track and Start Run from the main menu. Menus scroll in portrait and short landscape viewports, with no orientation lock. Settings and Return to Arcade remain reachable; the finish dialog offers Run Again and Main Menu.</p>
-        <p>The pause menu offers <strong>Resume</strong>, <strong>Restart Run</strong>, <strong>Settings</strong>, <strong>Main Menu</strong> and <strong>Return to Arcade</strong>. Resume continues the attempt; Restart Run begins a fresh countdown; Main Menu leaves the current attempt while keeping saved bests; Return to Arcade exits the game.</p>
-        <p class="small">When mixing devices, active gamepad steering has priority, then touch steering, then keyboard. Gas and brake each use the strongest input from the devices. Hardware gamepads were not tested; coexistence was checked with mocked controller state.</p>
-        <p class="small">This guide supports touch scrolling and links. On a keyboard, use Tab / Shift+Tab to move between links and Enter to open them. The skip link goes straight to the guide.</p>
+        <p>Tap a track, then Start Run. Menus scroll in portrait and landscape, so you can reach Settings and Return to Arcade even on a short screen. At the finish, choose Run Again or Main Menu.</p>
+        <p>From the pause menu, <strong>Resume</strong> continues the attempt and <strong>Restart Run</strong> begins a fresh countdown. <strong>Settings</strong> opens the options, <strong>Main Menu</strong> leaves the attempt while keeping saved bests, and <strong>Return to Arcade</strong> exits the game.</p>
+        <h3>Using more than one input device</h3>
+        <p>Active gamepad steering takes priority over touch, which takes priority over keyboard steering. Gas and brake each use the strongest input from the devices.</p>
       </section>
 
       <section id="tracks" aria-labelledby="tracks-title">
-        <div class="section-heading"><span class="section-number">03</span><h2 id="tracks-title">Four ways to test your line</h2></div>
-        <p>Each route has a start and a finish, with its own saved best. The checkpoint positions below are approximate percentages of route length, not lap counts.</p>
+        <div class="section-heading"><span class="section-number">03</span><h2 id="tracks-title">Tracks</h2></div>
+        <p>Each track runs from start to finish and has its own saved best. The checkpoint positions below show how far along the route each gate sits.</p>
         <div class="track-grid">
           <article class="track-card">
-            <p class="eyebrow">Track 01 / banked-shakedown</p>
+            <p class="eyebrow">Banked bends</p>
             <h3>Test Track A</h3>
-            <p>The default route, with banked sweepers and changes in elevation. The menu describes a 30–60 second target; this is a design target, not a time limit.</p>
+            <p>The default track has banked sweepers and elevation changes. Its menu description suggests a 30-60 second run, but there is no time limit.</p>
             <p class="track-spec">1 checkpoint · about 46%</p>
             <a href="../?track=banked-shakedown">Drive Track A <span aria-hidden="true">→</span></a>
           </article>
           <article class="track-card">
-            <p class="eyebrow">Track 02 / test-track-b</p>
+            <p class="eyebrow">Higher speed</p>
             <h3>Test Track B</h3>
-            <p>A longer route described in the menu as a higher-speed test. It includes several banked bends and elevation changes.</p>
+            <p>A longer track for higher-speed driving, with several banked bends and elevation changes.</p>
             <p class="track-spec">1 checkpoint · about 50%</p>
             <a href="../?track=test-track-b">Drive Track B <span aria-hidden="true">→</span></a>
           </article>
           <article class="track-card">
-            <p class="eyebrow">Track 03 / technical-bowl</p>
+            <p class="eyebrow">Banked bowl</p>
             <h3>Test Track C</h3>
-            <p>A technical speed-control route with a banked bowl. Managing speed through bends is the theme of this track.</p>
+            <p>A technical route built around a banked bowl. Control your speed through the bends.</p>
             <p class="track-spec">2 checkpoints · about 35% &amp; 72%</p>
             <a href="../?track=technical-bowl">Drive Track C <span aria-hidden="true">→</span></a>
           </article>
           <article class="track-card">
-            <p class="eyebrow">Track 04 / jump-speedcheck</p>
+            <p class="eyebrow">Ramp &amp; landing</p>
             <h3>Test Track D</h3>
-            <p>A ramp and landing test with a gap in the road early in the route. Its road is wider than the other three tracks. Carry speed into the ramp and prepare for the landing.</p>
+            <p>A ramp and landing test with a road gap early in the route. The road is wider than on the other tracks. Carry speed into the ramp and prepare for the landing.</p>
             <p class="track-spec">2 checkpoints · about 34% &amp; 68%</p>
             <a href="../?track=jump-speedcheck">Drive Track D <span aria-hidden="true">→</span></a>
           </article>
@@ -125,18 +121,18 @@
       </section>
 
       <section id="driving" aria-labelledby="driving-title">
-        <div class="section-heading"><span class="section-number">04</span><h2 id="driving-title">One car. Automatic gears.</h2></div>
-        <p>The prototype uses one arcade car with seven automatic forward gears. The speedometer shows km/h and the current gear. There is no car selector, tuning garage or manual gear-change control.</p>
+        <div class="section-heading"><span class="section-number">04</span><h2 id="driving-title">Car handling</h2></div>
+        <p>You drive one fixed car with seven automatic forward gears. The speedometer shows km/h and the current gear. There is no car selection, tuning or manual gear control.</p>
         <div class="mechanic-grid">
-          <div><h3>Steering &amp; drift</h3><p>Steering authority depends on speed, with less authority at high speed and none while stationary. Braking while steering at speed engages a drift state that reduces lateral grip. There is no drift-points system.</p></div>
-          <div><h3>Road &amp; barriers</h3><p>Driving off the road slows the car. Supported road edges have barriers that correct the car's position and reduce or redirect its velocity. An impact can cost speed; there is no damage or health meter.</p></div>
+          <div><h3>Steering &amp; drift</h3><p>Steering becomes less responsive at high speed and has no effect while stationary. Braking while steering at speed reduces sideways grip, allowing the car to drift. Drifting does not earn points.</p></div>
+          <div><h3>Road &amp; barriers</h3><p>Driving off the road slows the car. Barriers along supported road edges can push it back or deflect it, costing speed. Collisions do not cause damage.</p></div>
           <div><h3>Jumps &amp; landings</h3><p>The car can become airborne from ramps or road gaps. Steering in the air is weaker, and hard landings reduce speed. If you miss the road, use a checkpoint reset to recover.</p></div>
-          <div><h3>Learning a line</h3><p>Brake earlier when a bend catches you out, release the brake before you unintentionally reverse, and keep the car near the road when crossing timing gates. These are driving suggestions, not required inputs or bonus conditions.</p></div>
+          <div><h3>Cornering tips</h3><p>Brake earlier when a bend catches you out, then release the brake before you unintentionally reverse. Keep the car near the road when crossing timing gates.</p></div>
         </div>
       </section>
 
       <section id="timing" aria-labelledby="timing-title">
-        <div class="section-heading"><span class="section-number">05</span><h2 id="timing-title">Read the clock. Recover the car.</h2></div>
+        <div class="section-heading"><span class="section-number">05</span><h2 id="timing-title">Timing &amp; resets</h2></div>
         <div class="run-flow" aria-label="Run sequence">
           <span><b>3 · 2 · 1</b>Countdown</span><span class="flow-arrow" aria-hidden="true">→</span>
           <span><b>GO</b>Timer starts</span><span class="flow-arrow" aria-hidden="true">→</span>
@@ -144,41 +140,41 @@
           <span><b>Finish</b>Time compared</span>
         </div>
         <dl class="timing-list">
-          <div><dt>Current</dt><dd>Elapsed simulation time for this attempt. Pausing or opening Settings stops its advance.</dd></div>
-          <div><dt>Best</dt><dd>Your fastest saved player finish on the selected track. Dashes mean there is no saved best.</dd></div>
+          <div><dt>Current</dt><dd>Elapsed simulation time for this attempt. The timer stops while paused or in Settings.</dd></div>
+          <div><dt>Best</dt><dd>Your fastest saved time on the selected track. Dashes mean there is no saved best.</dd></div>
           <div><dt>Split</dt><dd>Total elapsed time at the latest checkpoint crossed. It is not a sector duration or a difference from your best.</dd></div>
         </dl>
-        <p>Times are displayed as minutes:seconds.milliseconds. Checkpoints register in route order when you cross forward and stay within the gate's road-width tolerance. Crossing the finish forward near the road ends the attempt.</p>
+        <p>Times are displayed as minutes:seconds.milliseconds. Cross checkpoint gates forward, in route order, and near the road to record a split. Crossing the finish forward near the road ends the attempt.</p>
         <h3>Checkpoint reset versus full restart</h3>
         <ul class="reset-list">
-          <li><strong>Press R once:</strong> restore the car's recorded pose and velocity from roughly half a second before the most recently passed checkpoint. Before any checkpoint, reset to the start.</li>
+          <li><strong>Press R once:</strong> restore the car's position, direction and velocity from roughly half a second before the last checkpoint you passed. Before any checkpoint, reset to the start.</li>
           <li><strong>Press R twice quickly:</strong> two presses within 360 milliseconds, after a checkpoint, place the car just beyond that checkpoint with zero velocity.</li>
-          <li><strong>The timer keeps going:</strong> a checkpoint reset never rewinds the elapsed time. Driving input is briefly locked for 0.18 seconds after a reset; there is no separately added fixed time penalty.</li>
+          <li><strong>The timer keeps going:</strong> a checkpoint reset never rewinds elapsed time. Driving input is locked for 0.18 seconds after a reset, but no fixed time penalty is added.</li>
           <li><strong>Press Enter for a fresh run:</strong> clear the current attempt's time, splits and recording, return to the start, and begin another countdown. Your saved best stays intact.</li>
         </ul>
-        <p class="tip"><strong>Rule limit:</strong> the reviewed finish check does not require every checkpoint to have been passed. Treat checkpoints as split and recovery gates; the prototype does not certify a complete checkpoint route.</p>
+        <p class="tip">The game does not require every checkpoint to have been passed before you finish. Checkpoints record splits and give you recovery points; they do not enforce a complete route.</p>
       </section>
 
       <section id="ghosts" aria-labelledby="ghosts-title">
-        <div class="section-heading"><span class="section-number">06</span><h2 id="ghosts-title">Chase a reference, then yourself</h2></div>
-        <p><strong>Your Best</strong> replays the saved fastest player run for this track. It appears after you have a valid saved recording and is controlled by the “Your best ghost” setting.</p>
-        <p><strong>Codex 5.5</strong> is the built-in model reference. Its ghost and the track's “MODEL PBS” billboard use the same simulated recorded run. The “Model ghosts” setting controls its visibility. Ghosts are visual references; they do not collide with your car.</p>
+        <div class="section-heading"><span class="section-number">06</span><h2 id="ghosts-title">Ghosts &amp; personal bests</h2></div>
+        <p><strong>Your Best</strong> replays your fastest saved run on the selected track. It appears once you have a saved recording; the "Your best ghost" setting shows or hides it.</p>
+        <p><strong>Codex 5.5</strong> is the built-in reference driver. Its ghost replays the run used for the track's "MODEL PBS" billboard. The "Model ghosts" setting shows or hides this ghost. Neither ghost collides with your car.</p>
         <p>A finish faster than the model reference reports how much you beat its PB by. Your own best is replaced only by a strictly faster player run. There are no unlocks, currency, medals or online player rankings in this version.</p>
         <details>
           <summary>Watch a built-in driving demonstration</summary>
-          <p>Autoplay drives the car automatically and reports its measured finish time. It does not replace your player best. Track C and D use their fastest registered PB driver by default; the other tracks use the default Codex driver.</p>
+          <p>Autoplay drives the car and reports its finish time without replacing your personal best. Tracks C and D use their fastest built-in reference driver; A and B use the default Codex driver.</p>
           <div class="demo-links">
             <a href="../?autoplay&amp;track=banked-shakedown">Watch Track A</a>
             <a href="../?autoplay&amp;track=test-track-b">Watch Track B</a>
             <a href="../?autoplay&amp;track=technical-bowl">Watch Track C</a>
             <a href="../?autoplay&amp;track=jump-speedcheck">Watch Track D</a>
           </div>
-          <p class="small">The exact reference times can change with physics, route or driver updates. Use the in-game billboard for the current build instead of treating a number in a guide as a permanent record.</p>
+          <p class="small">The in-game billboard shows the current reference times, which can change with game updates.</p>
         </details>
       </section>
 
       <section id="settings" aria-labelledby="settings-title">
-        <div class="section-heading"><span class="section-number">07</span><h2 id="settings-title">Settings &amp; your local saves</h2></div>
+        <div class="section-heading"><span class="section-number">07</span><h2 id="settings-title">Settings &amp; saves</h2></div>
         <p>Open Settings from the main menu or pause menu. Changes are saved as you make them.</p>
         <dl class="settings-list">
           <div><dt>Audio volume</dt><dd>Adjust from silent to full volume. The default is 65%. Start or resume a run to activate browser audio.</dd></div>
@@ -186,38 +182,43 @@
           <div><dt>Model ghosts</dt><dd>Show or hide the built-in reference ghost. On by default; its PB comparison remains available at the finish.</dd></div>
           <div><dt>Input overlay</dt><dd>Show steering, gas, brake and input-source readouts during the run. Off by default; <kbd>I</kbd> also toggles it.</dd></div>
         </dl>
-        <p>The game saves settings, the selected track, and one best run with ghost samples per track in your browser's local storage. Returning to the menu, restarting or selecting another track does not intentionally erase those bests.</p>
-        <p><strong>Returning to the Arcade:</strong> the exit button uses the normal Arcade destination unless a valid custom return address is supplied. Custom destinations may be relative or use HTTP(S), and must not contain embedded login credentials. Malformed addresses and other schemes fall back to the normal Arcade. An accepted address can lead to another website.</p>
-        <p><strong>Keep your saves:</strong> use the same browser profile and site address. Records are not synced between devices or browsers. Clearing site data removes them, and private browsing may discard them when the session ends. A local test address has separate storage from the GitHub Pages address.</p>
-        <p class="small">The wiki itself does not read, write or clear game saves. This version has no save export/import, account or cloud backup. If local storage is blocked or full, saves can fail; the game does not show a dedicated save-error message.</p>
+        <p>Settings, your selected track and one personal best with its ghost per track are saved in your browser. Returning to the menu, restarting or changing tracks keeps those bests.</p>
+        <p><strong>Keep your saves:</strong> use the same browser profile and site address. Records do not sync between devices or browsers, and there is no save import, export or cloud backup. Clearing site data removes your records; private browsing may discard them when the session ends. A local copy of the game has separate saves from the public site.</p>
+        <p>If browser storage is blocked or full, saves can fail without an error message. Opening this guide does not change game saves.</p>
+        <details>
+          <summary>Where Return to Arcade takes you</summary>
+          <p>The exit button normally returns to the Arcade. A game link can supply a custom return address, including another website. Valid destinations may be relative or use HTTP(S), but cannot contain embedded login credentials. Malformed addresses and other schemes fall back to the Arcade.</p>
+        </details>
       </section>
 
       <section id="limits" aria-labelledby="limits-title">
-        <div class="section-heading"><span class="section-number">08</span><h2 id="limits-title">What this prototype includes</h2></div>
+        <div class="section-heading"><span class="section-number">08</span><h2 id="limits-title">Current limits</h2></div>
         <ul class="limit-list">
-          <li><strong>Time attack only.</strong> One player car, four available point-to-point tracks and ghost comparisons. No combat, multiplayer race, campaign, unlock tree or vehicle upgrades.</li>
+          <li><strong>Time attack only.</strong> There is no combat, multiplayer race, campaign, unlock tree or vehicle upgrade system.</li>
           <li><strong>Local records only.</strong> The model billboard is a built-in reference, not an online player leaderboard.</li>
           <li><strong>Simulation timing.</strong> The clock advances with physics steps rather than directly with wall-clock time. Very slow frames can make an attempt diverge from real elapsed time.</li>
-          <li><strong>Device testing limits.</strong> Touch driving and phone menus were tested locally in Chrome emulation. Physical phones, iOS Safari and hardware gamepads remain untested. No tilt control is implemented.</li>
-          <li><strong>Completion and performance limits.</strong> No full manual phone race was completed in the touch playtest; existing runtime tests cover finish/checkpoint/restart behavior. Mobile thermal and sustained performance testing was not performed.</li>
-          <li><strong>Rendering requirements.</strong> The game uses Three.js and WebGL. This text guide can be read without the game renderer or JavaScript.</li>
+          <li><strong>Device support.</strong> Touch controls and phone menus were checked in Chrome emulation. Physical phones, iOS Safari, hardware gamepads and sustained mobile performance remain untested. There is no tilt steering.</li>
+          <li><strong>Graphics support.</strong> The game requires WebGL. This guide works without JavaScript.</li>
         </ul>
       </section>
 
       <section id="basis" aria-labelledby="basis-title">
-        <div class="section-heading"><span class="section-number">09</span><h2 id="basis-title">Version &amp; update basis</h2></div>
-        <p>Reviewed on <time datetime="2026-09-30">30 September 2026</time>, against package version <strong>0.1.0</strong> at commit <a href="https://github.com/Pazneria/racegpt/commit/020eba22bef8a3222cef0102c885753ab79018f1"><code>020eba2</code></a>. This is the source basis for the guide, not a claim about the version currently deployed.</p>
-        <p>Mechanics were checked against the implementation rather than the original design target. Touch controls, focused-menu keyboard behavior and exit-address validation were reconciled with this exact commit and its implementation owner's local test handoff. Physical-device and browser limits remain explicit above.</p>
-        <div class="source-links" aria-label="Implementation sources">
-          <a href="https://github.com/Pazneria/racegpt/blob/020eba22bef8a3222cef0102c885753ab79018f1/src/input/InputManager.ts">Controls</a>
-          <a href="https://github.com/Pazneria/racegpt/blob/020eba22bef8a3222cef0102c885753ab79018f1/src/game/Track.ts">Tracks</a>
-          <a href="https://github.com/Pazneria/racegpt/blob/020eba22bef8a3222cef0102c885753ab79018f1/src/game/Car.ts">Car physics</a>
-          <a href="https://github.com/Pazneria/racegpt/blob/020eba22bef8a3222cef0102c885753ab79018f1/src/main.ts">Timing &amp; ghosts</a>
-          <a href="https://github.com/Pazneria/racegpt/blob/020eba22bef8a3222cef0102c885753ab79018f1/src/game/Storage.ts">Settings &amp; storage</a>
-          <a href="https://github.com/Pazneria/racegpt/blob/020eba22bef8a3222cef0102c885753ab79018f1/src/ui/navigation.ts">Exit navigation</a>
-        </div>
+        <div class="section-heading"><span class="section-number">09</span><h2 id="basis-title">Version &amp; sources</h2></div>
+        <p>Updated on <time datetime="2026-10-01">1 October 2026</time> for game version <strong>0.1.0</strong>.</p>
+        <details>
+          <summary>Source revision and mechanics references</summary>
+          <p>This guide describes the game at <a href="https://github.com/Pazneria/racegpt/commit/91cccb406ecdb9a6a733237e62f1040ffcf339cd"><code>91cccb4</code></a>. The links below point to that revision.</p>
+          <div class="source-links" aria-label="Implementation sources">
+            <a href="https://github.com/Pazneria/racegpt/blob/91cccb406ecdb9a6a733237e62f1040ffcf339cd/src/input/InputManager.ts">Controls</a>
+            <a href="https://github.com/Pazneria/racegpt/blob/91cccb406ecdb9a6a733237e62f1040ffcf339cd/src/game/Track.ts">Tracks</a>
+            <a href="https://github.com/Pazneria/racegpt/blob/91cccb406ecdb9a6a733237e62f1040ffcf339cd/src/game/Car.ts">Car physics</a>
+            <a href="https://github.com/Pazneria/racegpt/blob/91cccb406ecdb9a6a733237e62f1040ffcf339cd/src/main.ts">Timing &amp; ghosts</a>
+            <a href="https://github.com/Pazneria/racegpt/blob/91cccb406ecdb9a6a733237e62f1040ffcf339cd/src/game/Storage.ts">Settings &amp; storage</a>
+            <a href="https://github.com/Pazneria/racegpt/blob/91cccb406ecdb9a6a733237e62f1040ffcf339cd/src/ui/navigation.ts">Exit navigation</a>
+          </div>
+        </details>
       </section>
-      <footer class="site-footer"><span>RaceGPT / Driver handbook</span><a href="#guide">Back to top ↑</a><a href="../">Return to game →</a></footer>
+      <footer class="site-footer"><span>RaceGPT / Player guide</span><a href="#guide">Back to top ↑</a><a href="../">Return to game →</a></footer>
     </main>
   </div>
 </body>
