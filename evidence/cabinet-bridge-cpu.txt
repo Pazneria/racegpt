@@ -34,3 +34,4 @@ runtime tests passed (7 variants at 4 render cadences, restart, GO, timing gates
 
 model PB tests passed (ghosts, billboard drawing, player comparisons on every track)
 PASS native cabinet bridge: selected-track identity, deferred countdown, one app/start, source/origin/session rejection, errors and standalone menu
+PASS native cabinet bridge: selected-track identity, deferred countdown, one app/start, source/origin/session rejection, errors and standalone menu

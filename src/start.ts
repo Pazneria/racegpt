@@ -7,7 +7,7 @@ const cabinet = createHostBridge(window.location.href, window.parent !== window,
   start: () => bootRaceGpt().startFromCabinet(),
   post: (message, origin) => window.parent.postMessage(message, origin)
 });
-const boot = createNativeBoot(() => new RaceGptApp(), {
+const boot = createNativeBoot(() => new RaceGptApp(cabinet ? () => cabinet.back() : undefined), {
   ready: detail => { window.dispatchEvent(new CustomEvent("racegpt:ready", {detail})); cabinet?.ready(); },
   error: () => { cabinet?.error(); window.dispatchEvent(new CustomEvent("racegpt:error", {
     detail: {message: "RaceGPT could not start. Reload to retry."}
