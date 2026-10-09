@@ -64,7 +64,7 @@ export class RaceGptApp {
   private inputSource = "Keyboard";
   private lastFinishCopy = "Run complete.";
 
-  constructor(private readonly cabinetReturn?: () => void) {
+  constructor(private readonly cabinetReturn?: (destination: 'aisle' | 'menu') => void) {
     const canvas = document.getElementById("game-canvas");
     if (!(canvas instanceof HTMLCanvasElement)) {
       throw new Error("Missing game canvas");
@@ -178,6 +178,7 @@ export class RaceGptApp {
 
   private returnToMenu(): void {
     this.audio.menuClick();
+    if (this.cabinetReturn) { this.cabinetReturn('menu'); return; }
     this.mode = "menu";
     this.ui.showMenu();
   }
@@ -264,7 +265,7 @@ export class RaceGptApp {
 
   private returnToArcade(): void {
     this.audio.menuClick();
-    if (this.cabinetReturn) { this.cabinetReturn(); return; }
+    if (this.cabinetReturn) { this.cabinetReturn('aisle'); return; }
     window.location.href = resolveArcadeReturnUrl(window.location.href);
   }
 

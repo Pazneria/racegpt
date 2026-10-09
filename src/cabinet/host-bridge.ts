@@ -22,6 +22,7 @@ export function createHostBridge(href: string, embedded: boolean, hooks: BridgeH
     ready() { if (phase === 'booting') { phase = 'ready'; report(); } },
     error() { phase = 'error'; report(); },
     back() { if (phase === 'started') post('racegpt:cabinet:back'); },
+    menu() { if (phase === 'started') post('racegpt:cabinet:menu'); },
     receive(data: unknown, origin: string, sourceIsParent: boolean) {
       if (!sourceIsParent || origin !== parentOrigin || !data || typeof data !== 'object') return false;
       const message = data as {type?: string; version?: number; session?: string};

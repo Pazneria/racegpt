@@ -17,6 +17,7 @@ assert(bridge.receive(message, 'https://pazneria.github.io', true));assert.equal
 bridge.receive(message, 'https://pazneria.github.io', true);assert.equal(starts, 1, 'A repeated start cannot restart countdown');
 assert.equal(reports.at(-1).message.type, 'racegpt:cabinet:started');
 bridge.back();assert.equal(reports.at(-1).message.type, 'racegpt:cabinet:back');
+bridge.menu();assert.equal(reports.at(-1).message.type, 'racegpt:cabinet:menu');
 boot.boot(href, {deferStart: true});assert.equal(apps, 1);
 assert.equal(createHostBridge(href, false, {start: () => true, post() {}}), null);
 const regular = createNativeBoot(() => app);regular.boot('https://pazneria.github.io/racegpt/?track=test-track-b');assert.equal(starts, 1, 'Standalone menu preserved');
