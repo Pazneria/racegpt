@@ -115,6 +115,23 @@ export class RaceGptApp {
     requestAnimationFrame((time) => this.frame(time));
   }
 
+  /** Optional cabinet handoff: reuse the existing countdown, never construct another app. */
+  startFromCabinet(): boolean {
+    if (this.mode !== "menu" || this.autoplay) return false;
+    this.beginCountdown();
+    // The parent start message is not a native audio gesture. Resume sound on
+    // the player's first real input; driving never waits for audio permission.
+    const resumeAudio = (event: Event) => {
+      if (!event.isTrusted) return;
+      window.removeEventListener('keydown', resumeAudio, true);
+      window.removeEventListener('pointerdown', resumeAudio, true);
+      void this.audio.resume(this.settings).catch(() => {});
+    };
+    window.addEventListener('keydown', resumeAudio, true);
+    window.addEventListener('pointerdown', resumeAudio, true);
+    return true;
+  }
+
   private startRunFromGesture(): void {
     this.audio.menuClick();
     void this.audio.resume(this.settings);
@@ -230,6 +247,9 @@ export class RaceGptApp {
     params.delete("showcaseTitle");
     params.delete("showcaseCopy");
     params.delete("inputOverlay");
+    params.delete("arcadeStart");
+    params.delete("arcadeSession");
+    params.delete("arcadeParentOrigin");
     window.location.search = params.toString();
   }
 
