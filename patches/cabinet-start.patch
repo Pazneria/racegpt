@@ -1,0 +1,78 @@
+diff --git a/src/cabinet/native-boot.ts b/src/cabinet/native-boot.ts
+new file mode 100644
+index 0000000..34ec407
+--- /dev/null
++++ b/src/cabinet/native-boot.ts
+@@ -0,0 +1,36 @@
++export interface CabinetGame {
++  /** Return false unless the existing application is in its menu mode. */
++  startFromCabinet(): boolean;
++}
++export interface NativeReady {
++  readonly autoStarted: boolean;
++  readonly trackId: string | null;
++}
++
++/** Optional native-game boot bridge. One instance per page; a failure is latched. */
++export function createNativeBoot<T extends CabinetGame>(createApp: () => T,
++  hooks: {ready?: (detail: NativeReady) => void; error?: (error: unknown) => void} = {}) {
++  let app: T | undefined;
++  let failure: unknown;
++  let failed = false;
++  let booting = false;
++  return {
++    boot(href: string): T {
++      if (failed) throw failure;
++      if (app) return app;
++      if (booting) throw new Error('RaceGPT boot is already in progress');
++      booting = true;
++      try {
++        const url = new URL(href);
++        app = createApp();
++        const autoStarted = url.searchParams.get('arcadeStart') === '1' && app.startFromCabinet();
++        hooks.ready?.(Object.freeze({autoStarted, trackId: url.searchParams.get('track')}));
++        return app;
++      } catch (error) {
++        failed = true; failure = error;
++        hooks.error?.(error);
++        throw error;
++      } finally { booting = false; }
++    }
++  };
++}
+diff --git a/src/main.ts b/src/main.ts
+index 2550005..5e11d62 100644
+--- a/src/main.ts
++++ b/src/main.ts
+@@ -115,6 +115,13 @@ export class RaceGptApp {
+     requestAnimationFrame((time) => this.frame(time));
+   }
+ 
++  /** Optional cabinet handoff: reuse the existing countdown, never construct another app. */
++  startFromCabinet(): boolean {
++    if (this.mode !== "menu" || this.autoplay) return false;
++    this.startRunFromGesture();
++    return true;
++  }
++
+   private startRunFromGesture(): void {
+     this.audio.menuClick();
+     void this.audio.resume(this.settings);
+diff --git a/src/start.ts b/src/start.ts
+index 1656807..fa891ce 100644
+--- a/src/start.ts
++++ b/src/start.ts
+@@ -1,4 +1,12 @@
+ import "./style.css";
+ import { RaceGptApp } from "./main";
++import { createNativeBoot } from "./cabinet/native-boot";
+ 
+-new RaceGptApp();
++const boot = createNativeBoot(() => new RaceGptApp(), {
++  ready: detail => window.dispatchEvent(new CustomEvent("racegpt:ready", {detail})),
++  error: () => window.dispatchEvent(new CustomEvent("racegpt:error", {
++    detail: {message: "RaceGPT could not start. Reload to retry."}
++  }))
++});
++export const bootRaceGpt = () => boot.boot(window.location.href);
++bootRaceGpt();

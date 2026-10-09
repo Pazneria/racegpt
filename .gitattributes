@@ -1,0 +1,2 @@
+# Keep the optional unified patch byte-stable; blank context lines are valid patch syntax.
+*.patch -text whitespace=-blank-at-eol

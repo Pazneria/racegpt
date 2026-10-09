@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RaceGPT cabinet screen review</title>
+<style>
+html,body{margin:0;background:#070e12;color:#f2f4df;font:16px system-ui}main{width:min(100vw,1280px);margin:auto}
+canvas{display:block;width:100%;aspect-ratio:4/3}nav{display:flex;gap:8px;padding:10px;flex-wrap:wrap}button{font:inherit;padding:8px 14px}
+#status{padding:0 10px} @media(prefers-reduced-motion:reduce){canvas{scroll-behavior:auto}}
+</style>
+<main><canvas width="1280" height="960" tabindex="0" aria-label="RaceGPT: arrows choose a track, Enter starts, Escape returns"></canvas>
+<nav aria-label="Accessible menu actions"></nav><p id="status" role="status"></p></main>
+<script type="module">
+import {createMenu,draw,TRACKS} from './src/cabinet/racegpt-menu.js';
+const canvas=document.querySelector('canvas'),ctx=canvas.getContext('2d'),nav=document.querySelector('nav');
+const status=document.querySelector('#status'),reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let timer=null;
+const menu=createMenu({onStart:(selection,request)=>{
+  status.textContent=`Review stub: ${selection.trackId}. The real game has not been launched.`;
+  timer=setTimeout(()=>menu.ready(request.id),2200);
+  request.signal.addEventListener('abort',()=>clearTimeout(timer),{once:true});
+},onBack:()=>{status.textContent='Back hook received.';},onChange:state=>{paint();sync(state);}});
+function sync(state){
+  for(const b of nav.children){b.disabled=state.phase==='loading'||state.phase==='playing';
+    if(b.dataset.id===state.trackId)b.setAttribute('aria-pressed','true');else b.removeAttribute('aria-pressed');}
+  document.querySelector('#reset').disabled=false;
+}
+function paint(time=performance.now()){draw(ctx,{width:1280,height:960,time,state:menu.getState(),reducedMotion:reduced});}
+for(const [id,label] of [...TRACKS.map(t=>[t.id,t.name]),['start','Start run'],['back','Back']]){
+  const b=document.createElement('button');b.textContent=label;b.dataset.id=id;b.onclick=()=>menu.activate(id);nav.append(b);
+}
+const reset=document.createElement('button');reset.textContent='Review: reset';reset.id='reset';reset.onclick=()=>menu.reset();nav.append(reset);
+canvas.addEventListener('keydown',e=>{if(menu.key(e))e.preventDefault();});
+for(const [name,type] of [['pointermove','move'],['pointerup','up'],['pointerleave','leave']])canvas.addEventListener(name,e=>{
+  const r=canvas.getBoundingClientRect();menu.pointer({u:(e.clientX-r.left)/r.width,v:(e.clientY-r.top)/r.height,type});
+});
+paint();setInterval(()=>{if(!document.hidden)paint();},100);
+window.__cabinetReview={menu,draw,paint};
+</script>
+</html>
