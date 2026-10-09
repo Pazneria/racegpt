@@ -15,6 +15,7 @@ export function createHostBridge(href: string, embedded: boolean, hooks: BridgeH
   } catch { return null; }
   if (!embedded || url.searchParams.get('arcadeStart') !== '1' || !session || session.length > 100) return null;
   let phase: 'booting' | 'ready' | 'started' | 'error' = 'booting';
+  let escapeRequested = false;
   const post = (type: string) => hooks.post(Object.freeze({type, version: 1, session,
     trackId: url.searchParams.get('track')}), parentOrigin);
   const report = () => { if (phase !== 'booting') post('racegpt:cabinet:' + phase); };
@@ -23,6 +24,12 @@ export function createHostBridge(href: string, embedded: boolean, hooks: BridgeH
     error() { phase = 'error'; report(); },
     back() { if (phase === 'started') post('racegpt:cabinet:back'); },
     menu() { if (phase === 'started') post('racegpt:cabinet:menu'); },
+    escape(event: Pick<KeyboardEvent, 'code' | 'repeat' | 'preventDefault' | 'stopImmediatePropagation'>) {
+      if (event.code !== 'Escape' || phase !== 'started') return false;
+      event.preventDefault(); event.stopImmediatePropagation();
+      if (!event.repeat && !escapeRequested) { escapeRequested = true; post('racegpt:cabinet:back'); }
+      return true;
+    },
     receive(data: unknown, origin: string, sourceIsParent: boolean) {
       if (!sourceIsParent || origin !== parentOrigin || !data || typeof data !== 'object') return false;
       const message = data as {type?: string; version?: number; session?: string};

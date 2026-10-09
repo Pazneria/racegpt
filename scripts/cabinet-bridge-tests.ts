@@ -5,6 +5,9 @@ const href = 'https://pazneria.github.io/racegpt/?track=technical-bowl&arcadeSta
 let apps = 0, starts = 0; const reports: any[] = [];
 const app = {startFromCabinet() { starts++; return true; }};
 const bridge = createHostBridge(href, true, {start: () => app.startFromCabinet(), post: (message, origin) => reports.push({message, origin})})!;
+let prevented = 0, stopped = 0;
+const escape = {code: 'Escape', repeat: false, preventDefault() { prevented++; }, stopImmediatePropagation() { stopped++; }};
+assert.equal(bridge.escape(escape), false, 'The loading barrier has not given the child keyboard input');
 const boot = createNativeBoot(() => { apps++; return app; }, {ready: () => bridge.ready()});
 assert.equal(boot.boot(href, {deferStart: true}), app);assert.equal(starts, 0, 'No countdown behind token/loading');
 assert.equal(reports[0].message.type, 'racegpt:cabinet:ready');assert.equal(reports[0].origin, 'https://pazneria.github.io');
@@ -18,6 +21,14 @@ bridge.receive(message, 'https://pazneria.github.io', true);assert.equal(starts,
 assert.equal(reports.at(-1).message.type, 'racegpt:cabinet:started');
 bridge.back();assert.equal(reports.at(-1).message.type, 'racegpt:cabinet:back');
 bridge.menu();assert.equal(reports.at(-1).message.type, 'racegpt:cabinet:menu');
+const beforeEscape = reports.length;
+assert.equal(bridge.escape({...escape, repeat: true}), true);assert.equal(reports.length, beforeEscape);
+assert(bridge.escape(escape));assert.equal(reports.at(-1).message.type, 'racegpt:cabinet:back');
+bridge.escape(escape);assert.equal(reports.length, beforeEscape + 1, 'Keyup or a repeated delivery cannot emit a second exit');
+assert.equal(bridge.escape({...escape, code: 'KeyW'}), false);assert.equal(prevented, 3);assert.equal(stopped, 3);
+const releaseOnly = createHostBridge(href, true, {start: () => true, post: message => reports.push({message})})!;
+releaseOnly.ready();releaseOnly.receive(message, 'https://pazneria.github.io', true);
+assert(releaseOnly.escape(escape), 'A delivered keyup can exit if pointer lock swallowed keydown');
 boot.boot(href, {deferStart: true});assert.equal(apps, 1);
 assert.equal(createHostBridge(href, false, {start: () => true, post() {}}), null);
 const regular = createNativeBoot(() => app);regular.boot('https://pazneria.github.io/racegpt/?track=test-track-b');assert.equal(starts, 1, 'Standalone menu preserved');
